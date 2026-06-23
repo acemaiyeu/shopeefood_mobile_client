@@ -1,5 +1,5 @@
+import { toast } from '@/utils/toast';
 import axios from 'axios';
-import { toast } from 'react-toastify';
 import { apiURL, deleteItem, getItem } from '../constants/const';
 
 
@@ -32,7 +32,7 @@ axiosClient.interceptors.request.use(
       config.signal = controller.signal;
       controller.abort();
 
-      toast.error("Phiên đăng nhập đã hết hạn!");
+      toast("Phiên đăng nhập đã hết hạn!", "error");
       // window.location.href = '/login'; 
       return config;
     }
@@ -42,9 +42,9 @@ axiosClient.interceptors.request.use(
     }
 
     // Kiểm tra bảo mật domain
-    if (!config.baseURL.includes('almobe.io.vn') && !config.baseURL.includes('192.168.') && !config.baseURL.includes('localhost')) {
-      return Promise.reject(new Error('Cảnh báo: Nguồn không xác thực!'));
-    }
+    // if (!config.baseURL.includes('almobe.io.vn') && !config.baseURL.includes('192.168.') && !config.baseURL.includes('localhost')) {
+    //   return Promise.reject(new Error('Cảnh báo: Nguồn không xác thực!'));
+    // }
     return config;
   },
   (error) => Promise.reject(error)
@@ -56,50 +56,50 @@ axiosClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response) {
+      // 1. Log chi tiết lỗi để debug
+      console.log("--- CHI TIẾT LỖI API ---");
+      console.log("Request URL:", `${apiURL}/api` + error.config.url); // Tránh cộng chuỗi nếu apiURL đã có trong cấu hình base
+      const payload = error.config.data ? JSON.parse(error.config.data) : "Không có payload";
+      console.log("Payload (Request Body):", payload);
+      console.log("Request Method:", error.config.method?.toUpperCase());
+      console.log("Status Code:", error.response.status, error.response.statusText);
+      console.log("Request Headers:", error.config.headers);
+      console.log("Response Headers:", error.response.headers);
+      console.log("------------------------");
+
+      // 2. Xử lý logic theo status code
       const { status, data } = error.response;
       const message = data?.message || 'Đã xảy ra lỗi';
 
       switch (status) {
         case 401:
-          // Xử lý khi Token hết hạn hoặc không hợp lệ từ phía Server
           if (!window.location.pathname.includes('/login')) {
-            toast.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+            toast("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.", "error");
             clearClientAuth();
-            // Điều hướng người dùng nếu cần
-            // setTimeout(() => window.location.href = '/login', 1500);
           }
           break;
-
         case 403:
-          toast.error("Bạn không có quyền truy cập!");
+          toast("Bạn không có quyền truy cập!", "error");
           break;
-
         case 422:
           const validationErrors = data?.errors;
-          toast.error(Array.isArray(validationErrors) ? validationErrors[0] : (validationErrors || "Dữ liệu không hợp lệ."));
+          toast(Array.isArray(validationErrors) ? validationErrors[0] : (validationErrors || "Dữ liệu không hợp lệ."), "error");
           break;
-
         case 429:
-          toast.error("Quá nhiều yêu cầu, vui lòng thử lại sau!");
+          toast("Quá nhiều yêu cầu, vui lòng thử lại sau!", "error");
           break;
-
         case 500:
-          toast.error('Lỗi hệ thống máy chủ!');
+          toast('Lỗi hệ thống máy chủ!', "error");
           break;
-
         default:
-          toast.error(message);
+          toast(message, "error");
       }
-      if(window.location.pathname !== "/login" &&  !window.location.pathname.startsWith("/1204/admin")){
-        window.location.href = '/login'; 
-      } 
     } else if (error.code === 'ERR_CANCELED') {
-      // Request bị hủy do chủ động check ở interceptor.request, không cần bắn lỗi thêm
-      console.log('Request canceled by client (Expired)');
+      console.log('Request canceled by client');
     } else {
-      toast.error("Lỗi kết nối hoặc CSP chặn!");
+      toast("Lỗi kết nối hoặc không phản hồi từ máy chủ!", "error");
     }
-    
+
     return Promise.reject(error);
   }
 );

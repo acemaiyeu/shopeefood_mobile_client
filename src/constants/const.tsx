@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 export const apiURL = "http://192.168.31.81:8000"
 export const primary_color = "#f7175a"
-
+export const SF_Pro = "SF_Pro";
 export const formGroupGlobal = StyleSheet.create({
     group: {
         flexDirection: "row",
@@ -52,7 +52,19 @@ export async function getItem(key: string) {
   }
 }
 export async function setItem(key: string, value: any) {
-  await SecureStore.setItemAsync(key, value);
+  if (key) {
+    console.log("Checkkk key", key);
+    
+    // ÉP KIỂU VỀ STRING
+    // Nếu value là object hoặc array -> JSON.stringify
+    // Nếu value là số hoặc boolean -> .toString()
+    // Nếu value là null/undefined -> chuỗi rỗng ""
+    const stringValue = typeof value === 'string' 
+      ? value 
+      : JSON.stringify(value);
+
+    await SecureStore.setItemAsync(key, stringValue);
+  }
 }
 export async function deleteItem(key: string) {
   await SecureStore.deleteItemAsync(key);
@@ -89,25 +101,22 @@ export function setTokenWithExpiry(token_name = 'access_token', token: string, e
     // Tính mốc thời gian hết hạn (Hiện tại + số giây từ API * 1000 để ra miligiây)
     const expiryTime: any = now.getTime() + (expiresIn * 1000);
 
-    // Lưu cả token và thời gian hết hạn vào một object
-    localStorage.setItem(token_name, token)
-    if(token_name === 'access_token_admin'){
-        localStorage.setItem('expiresAdminAt', expiryTime)
-    }else{
-        localStorage.setItem('expiresAt', expiryTime)
-    }
-    console.log(`Token đã được lưu. Sẽ hết hạn vào: ${new Date(expiryTime).toLocaleString()}`);
+    // Lưu cả token và thời gian hết hạn vào một object\
+
+    setItem(token_name, token)
+    setItem('expiresAt', expiryTime)
+
 }
 export function getValidToken(name_token = "access_token") {
-    const token = localStorage.getItem(name_token);
+    const token = getItem(name_token);
     
     
     if (!token) {
         return { status: 'EXPIRED', token: null };
     }
-    let expiresAt: any = localStorage.getItem('expiresAt');
+    let expiresAt: any = getItem('expiresAt');
     if(name_token === "access_token_admin"){
-      expiresAt = localStorage.getItem('expiresAdminAt');
+      expiresAt = getItem('expiresAdminAt');
     }
 
     const now = new Date().getTime(); // Lấy timestamp hiện tại (miligiây)
@@ -118,7 +127,7 @@ export function getValidToken(name_token = "access_token") {
 
     // 1. Trường hợp đã hết hạn hoàn toàn
     if (timeLeftInMinutes <= 0) {
-        localStorage.removeItem(name_token); // Xóa token cũ
+        deleteItem(name_token); // Xóa token cũ
         return { status: 'EXPIRED', token: null };
     }
 

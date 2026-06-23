@@ -1,0 +1,379 @@
+import { formatMoney, primary_color, SF_Pro } from "@/constants/const";
+import AntDesign from '@expo/vector-icons/AntDesign';
+import Fontisto from '@expo/vector-icons/Fontisto';
+import { useEffect, useState } from "react";
+import { Image, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import Modal from 'react-native-modal';
+// import Fontisto from '@expo/vector-icons/Fontisto';
+interface IMODAL {
+  modalVisible: boolean,
+  setModalVisible: (v: boolean) => void,
+  product: any
+}
+interface toppingC {
+  id: number,
+  product_id: number
+}
+const toppings = [
+      {
+        id: 1,
+        name: 'Topping',
+        choose: 1,
+        details: [
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm 2",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+        ]
+      },
+      {
+        id: 2,
+        name: 'Topping 2',
+        choose: 1,
+        details: [
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+          {
+            id: 1,
+            product: {
+              id: 1,
+              name: "Cơm thêm",
+              price: 2000,
+              type: 'topping'
+            }
+          },
+        ]
+      }
+    ]
+interface IdataAddCart {
+  product_id: number | undefined,
+  qty: number
+}
+const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
+  const [toppingChoose, setToppingChoose] = useState<toppingC[]>([]);
+  const [dataAddCart, setDataAddCart] = useState<IdataAddCart>({
+    product_id: undefined,
+    qty: 1
+  });
+
+  useEffect(() => {
+    setDataAddCart({
+      product_id: product.id,
+      qty: 1
+    })
+  }, [product.id])
+    return (
+        <Modal isVisible={modalVisible} onBackdropPress={() => setModalVisible(false)} style={styles.container}>
+            <View style={styles.box}>
+                <View>
+                  <Text style={styles.header_text}>Bạn đang muốn?</Text>
+                </View>
+                <View style={styles.hr}></View>
+                <View style={styles.body}>
+                  <View style={styles.product_infos}>
+                    <View style={styles.products}>
+                      <Image source={{uri: product.thumbnail}} style={{width: 100, height: 50, borderRadius: 5}} />
+                      <View style={styles.product_info}>
+                        <Text style={styles.name}>{product.name}</Text>
+                        <Text style={styles.price}>{formatMoney(product.price)}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.qty}>
+                      <AntDesign name="minus-circle" size={24} color={primary_color} onPress={() => {if(dataAddCart.qty > 1){setDataAddCart({...dataAddCart, qty: dataAddCart.qty - 1})}}}/>
+                      <TextInput 
+                        style={styles.input} 
+                        value={String(dataAddCart?.qty || '1')}
+                        keyboardType="numeric" 
+                        onChangeText={(v) => {
+                          // Only update if the string is numeric or empty (to allow clearing the field)
+                            setDataAddCart({ ...dataAddCart, qty: Number(v) });
+                        }}
+                      />
+                      <AntDesign name="plus-circle" size={24} color={primary_color} onPress={() => setDataAddCart({...dataAddCart, qty: dataAddCart.qty + 1})}/>
+                    </View>
+                  </View>
+                  <ScrollView style={styles.topping_container}>
+                      {toppings && toppings.length > 0 && toppings.map((topping) => {
+                        if(topping.details && topping.details.length > 0){
+                            return (
+                              <View style={styles.toppings} key={topping.id}>
+                                  <Text style={styles.topping_header}>
+                                      {topping.name}:
+                                  </Text>
+                                  <ScrollView style={styles.list_topping}>
+                                      {topping.details.map((detail) => {
+                                          return (
+                                            <View style={styles.topping_item} key={detail.id}>
+                                                <Text style={styles.topping_item_name}>{detail.product.name}</Text>
+                                                {toppingChoose.findIndex((i: any) => i.id === detail.id) >= 0 ? 
+                                                <Fontisto name="checkbox-active" size={24} color={primary_color} 
+                                                onPress={() => {
+                                                  const check_exists = toppingChoose.findIndex((i: any) => i.id === detail.id);
+                                                    if(check_exists >= 0){
+                                                      const new_toppings = toppingChoose.filter((item) => item.id !== detail.id);
+                                                      setToppingChoose(new_toppings)
+                                                    }
+                                                }}/>  :
+
+                                                <Fontisto name="checkbox-passive" size={24} color={primary_color} onPress={() => {
+                                                    const check_exists = toppingChoose.findIndex((i: any) => i.id === detail.id);
+                                                    if(check_exists === -1){
+                                                      const ob = {
+                                                        id: detail.id,
+                                                        product_id: detail.product.id
+                                                      }
+                                                      setToppingChoose([...toppingChoose, ob])
+                                                    }
+                                                }}/> }
+                                                {/* <Fontisto name="checkbox-active" size={24} color={primary_color} /> */}
+                                            </View>
+                                          )
+                                      })}
+                                  </ScrollView>
+                              </View>
+                            )
+                        }
+                        
+                      })}
+                  </ScrollView>
+                </View>
+                <View style={styles.hr}></View>
+                 <View style={styles.footer}>
+                  <View style={styles.btn}>
+                      <Text style={styles.btn_text}>Mua ngay</Text>
+                  </View>
+                  <View style={styles.btn}>
+                      <Text style={styles.btn_text}>Thêm vào giỏ hàng</Text>
+                  </View>
+                  
+                  
+                </View>
+            </View>
+        </Modal>
+    );
+};
+const styles = StyleSheet.create({
+  container: {
+    justifyContent: "flex-end",
+  },
+  box: {
+    backgroundColor: "#fff",
+    width: "100%",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 30,
+  },
+  header_text: {
+    fontSize: 20,
+    textAlign: "center"
+  },
+  hr: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginVertical: 5
+  },
+  body: {
+    paddingVertical: 5,
+    gap: 10
+  },
+  product_infos: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 10
+  },
+  products: {
+    flexDirection: "row",
+    gap: 10
+  },
+  qty: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5
+  },
+  input: {
+    minWidth: 10,
+    color: primary_color,
+    borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 5
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: SF_Pro
+  },
+  price: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: primary_color,
+  },
+  footer: {
+    flexDirection: "row",
+    gap: 1
+  },
+  btn: {
+    width: "49%",
+    fontSize: 15,
+    backgroundColor: primary_color,
+    padding: 10,
+    borderRadius: 5
+  },
+  btn_text: {
+    fontSize: 15,
+    color: "#fff",
+    textAlign: "center"
+  },
+  list_topping: {
+    gap: 5
+  },
+  topping_item: {
+    flexDirection: "row",
+    padding: 10,
+    justifyContent: "space-between",
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    alignItems: "center",
+    marginVertical: 5
+  },
+  topping_item_name: {
+    fontFamily: SF_Pro
+  },
+  topping_header: {
+    fontSize: 20,
+    fontWeight: "600",
+    fontFamily: SF_Pro
+  },
+  topping_container: {
+    maxHeight: 400
+  }
+})
+export default StoreModal;
