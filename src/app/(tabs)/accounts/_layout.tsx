@@ -12,6 +12,7 @@ export default function OrdersLayout() {
       <Stack.Screen name="tos" options={{ title: 'Điều khoản dịch vụ' }} />
       <Stack.Screen name="drp" options={{ title: 'Tranh chấp, khiếu nại' }} />
       <Stack.Screen name="about" options={{ title: 'Thông tin về chúng tôi' }} />
+      <Stack.Screen name="logout" options={{ title: 'Đăng xuất' }} />
     </Stack>
   );
 }

@@ -6,13 +6,15 @@ import { ThemedView } from '@/components/themed-view';
 // 1. Import hook lấy kích thước vùng an toàn
 import { apiURL, formGroupGlobal, primary_color, setTokenWithExpiry, SF_Pro } from '@/constants/const';
 import axiosAuth from '@/services/axiosAuth';
+import { updatePublic } from '@/store/features/PublicSlice';
 import { toast } from '@/utils/toast';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import axios from 'axios';
 import { useNavigation } from 'expo-router';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import logo from '../../../../assets/images/logo.png';
+import { useDispatch } from 'react-redux';
+import logo from '../../../assets/images/logo1.png';
 
 function getDevMenuHint() {
   if (Platform.OS === 'web') {
@@ -36,14 +38,16 @@ function getDevMenuHint() {
 export default function HomeScreen() {
   // 2. Lấy thông số khoảng cách an toàn của thiết bị hiện tại
   const [formData, setFormData] = useState({});
+  const dispatch = useDispatch();
   const handleLogin = async () => {
             await axios.post(`${apiURL}/api/login`, {
                 ...formData
-            }).then((res: any) => {
+            }).then(async (res: any) => {
                 if(res.data){
                   // console.log('res', res.data.access_token, res.data.expires_in)
                   setTokenWithExpiry('access_token', res.data.access_token, res.data.expires_in);
-                  console.log("Đăng nhập thành công!");
+                  toast("Đăng nhập thành công!");
+                  dispatch(updatePublic({login: true}))
                 }
             }).catch((e) => {
               if (e.response) {

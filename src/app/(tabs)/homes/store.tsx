@@ -32,7 +32,6 @@ export default function Store() {
             scrollViewRef.current.scrollTo({ y: y, animated: true });
         }
     };
-
     const handleAddToCart = (product: any) => {
         setProductActive({ ...product });
         setModalVisible(true);
@@ -48,12 +47,11 @@ export default function Store() {
           setModalVisible(true);
         }
       }
-    }, 1000);
+    }, 500);
   }, [store]);
     return (
         <ThemedView style={styles.container}>
             <StoreModal modalVisible={modalVisible} setModalVisible={setModalVisible} product={productActive || {}} />
-            
             <View style={styles.header}>
                 <View style={styles.thumbnail_container}>
                     <Image source={{ uri: store.thumbnail }} style={{ width: 150, height: 100 }} />

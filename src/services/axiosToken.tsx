@@ -1,6 +1,7 @@
 import { apiURL, deleteItem, getItem } from '@/constants/const';
 import { toast } from '@/utils/toast';
 import axios from 'axios';
+import { Alert } from 'react-native';
 
 const axiosToken = axios.create({
   baseURL: `${apiURL}/api/v2/`,
@@ -18,36 +19,46 @@ const clearClientAuth = () => {
   // Nếu có dùng Redux/Slice để lưu profile client, bạn nên dispatch reset ở đây
 };
 axiosToken.interceptors.request.use(
-  (config) => {
-    const token = getItem('access_token');
-    console.log("Checkkk token" ,token)
-    const expiresAt = getItem('expires_at');
+  async (config) => {
+    // SỬA LỖI: Thêm await cho cả hai hàm đọc dữ liệu bất đồng bộ
+    const token = await getItem('access_token');
+    const expiresAt = await getItem('expires_at');
+    
+    console.log("Checkkk token:", token);
+
     // 1. KIỂM TRA CHỦ ĐỘNG: Nếu biết chắc token đã hết hạn thì không gửi request nữa
     if (expiresAt && Date.now() > Number(expiresAt)) {
-      clearClientAuth();
+      await clearClientAuth();
       
       // Hủy request để tiết kiệm tài nguyên
       const controller = new AbortController();
       config.signal = controller.signal;
       controller.abort();
 
-      toast("Phiên đăng nhập đã hết hạn!", "error");
-      // window.location.href = '/login'; 
+      // SỬA LỖI: Thay toast của Web bằng Alert của Mobile
+      Alert.alert("Thông báo", "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!");
+      
       return config;
     }
 
+    // 2. Đính kèm token vào header nếu tồn tại
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // Kiểm tra bảo mật domain
-    // if (!config.baseURL.includes('almobe.io.vn') && !config.baseURL.includes('192.168.') && !config.baseURL.includes('localhost')) {
+    // 3. Kiểm tra bảo mật domain (Nếu mở lại thì dùng cấu trúc này)
+    // const baseURL = config.baseURL || '';
+    // if (!baseURL.includes('almobe.io.vn') && !baseURL.includes('192.168.') && !baseURL.includes('localhost')) {
     //   return Promise.reject(new Error('Cảnh báo: Nguồn không xác thực!'));
     // }
+
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
+
 axiosToken.interceptors.response.use(
   (response) => response.data,
   (error) => {

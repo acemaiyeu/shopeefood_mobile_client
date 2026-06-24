@@ -1,9 +1,13 @@
 import { formatMoney, primary_color, SF_Pro } from "@/constants/const";
+import { addCart } from "@/services/CartService";
+import { updatePublic } from "@/store/features/PublicSlice";
+import { toast } from "@/utils/toast";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Modal from 'react-native-modal';
+import { useDispatch } from "react-redux";
 // import Fontisto from '@expo/vector-icons/Fontisto';
 interface IMODAL {
   modalVisible: boolean,
@@ -14,166 +18,6 @@ interface toppingC {
   id: number,
   product_id: number
 }
-const toppings = [
-      {
-        id: 1,
-        name: 'Topping',
-        choose: 1,
-        details: [
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm 2",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-        ]
-      },
-      {
-        id: 2,
-        name: 'Topping 2',
-        choose: 1,
-        details: [
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-          {
-            id: 1,
-            product: {
-              id: 1,
-              name: "Cơm thêm",
-              price: 2000,
-              type: 'topping'
-            }
-          },
-        ]
-      }
-    ]
 interface IdataAddCart {
   product_id: number | undefined,
   qty: number
@@ -184,13 +28,23 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
     product_id: undefined,
     qty: 1
   });
-
+  const dispatch = useDispatch();
   useEffect(() => {
     setDataAddCart({
       product_id: product.id,
       qty: 1
     })
+    setToppingChoose([])
   }, [product.id])
+  const addToCart = async () => {
+    const data: any = await addCart({...dataAddCart, toppings: toppingChoose});
+    if(data){
+        dispatch(updatePublic({total_cart: data.total_cart}))
+        toast("Thêm giỏ hàng thành công!")
+        setModalVisible(false)
+        
+    }
+  }
     return (
         <Modal isVisible={modalVisible} onBackdropPress={() => setModalVisible(false)} style={styles.container}>
             <View style={styles.box}>
@@ -222,7 +76,8 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
                     </View>
                   </View>
                   <ScrollView style={styles.topping_container}>
-                      {toppings && toppings.length > 0 && toppings.map((topping) => {
+                    
+                      {product.toppings && product.toppings.length > 0 && product.toppings.map((topping) => {
                         if(topping.details && topping.details.length > 0){
                             return (
                               <View style={styles.toppings} key={topping.id}>
@@ -268,14 +123,9 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
                 </View>
                 <View style={styles.hr}></View>
                  <View style={styles.footer}>
-                  <View style={styles.btn}>
-                      <Text style={styles.btn_text}>Mua ngay</Text>
-                  </View>
-                  <View style={styles.btn}>
-                      <Text style={styles.btn_text}>Thêm vào giỏ hàng</Text>
-                  </View>
-                  
-                  
+                  <Pressable style={styles.btn} onPress={() => addToCart()}>
+                      <Text style={styles.btn_text} >Thêm vào giỏ hàng</Text>
+                  </Pressable>
                 </View>
             </View>
         </Modal>
@@ -323,7 +173,7 @@ const styles = StyleSheet.create({
   input: {
     minWidth: 10,
     color: primary_color,
-    borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 5
+    // borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 5
   },
   name: {
     fontSize: 18,
@@ -340,7 +190,7 @@ const styles = StyleSheet.create({
     gap: 1
   },
   btn: {
-    width: "49%",
+    width: "100%",
     fontSize: 15,
     backgroundColor: primary_color,
     padding: 10,

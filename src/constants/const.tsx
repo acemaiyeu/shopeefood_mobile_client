@@ -1,7 +1,10 @@
+import * as SecureStore from 'expo-secure-store';
 import { StyleSheet } from "react-native";
 export const apiURL = "http://192.168.31.81:8000"
 export const primary_color = "#f7175a"
 export const SF_Pro = "SF_Pro";
+export const SF_Pro_DISPLAY_BOLD = "SF_Pro_DISPLAY_BOLD";
+
 export const formGroupGlobal = StyleSheet.create({
     group: {
         flexDirection: "row",
@@ -41,7 +44,7 @@ export const formGroupGlobal = StyleSheet.create({
     }
 })
 
-import * as SecureStore from 'expo-secure-store';
+
 
 export async function getItem(key: string) {
   let result = await SecureStore.getItemAsync(key);
@@ -51,19 +54,9 @@ export async function getItem(key: string) {
     return null;
   }
 }
-export async function setItem(key: string, value: any) {
+export async function setItem(key: string, value: string) {
   if (key) {
-    console.log("Checkkk key", key);
-    
-    // ÉP KIỂU VỀ STRING
-    // Nếu value là object hoặc array -> JSON.stringify
-    // Nếu value là số hoặc boolean -> .toString()
-    // Nếu value là null/undefined -> chuỗi rỗng ""
-    const stringValue = typeof value === 'string' 
-      ? value 
-      : JSON.stringify(value);
-
-    await SecureStore.setItemAsync(key, stringValue);
+    await SecureStore.setItemAsync(key, value);
   }
 }
 export async function deleteItem(key: string) {
@@ -95,7 +88,7 @@ export const formatToInputDateTime = (dateStr: string) => {
     // Trả về đúng định dạng YYYY-MM-DDTHH:mm
     return `${fullYear}-${month}-${day}T${hour}:${minute}`;
 };
-export function setTokenWithExpiry(token_name = 'access_token', token: string, expiresIn: number) {
+export const setTokenWithExpiry = async (token_name = 'access_token', token: string, expiresIn: number) => {
     const now = new Date();
     
     // Tính mốc thời gian hết hạn (Hiện tại + số giây từ API * 1000 để ra miligiây)
@@ -103,8 +96,10 @@ export function setTokenWithExpiry(token_name = 'access_token', token: string, e
 
     // Lưu cả token và thời gian hết hạn vào một object\
 
-    setItem(token_name, token)
-    setItem('expiresAt', expiryTime)
+    await setItem(token_name, token)
+    await setItem('expiresAt', expiryTime + "")
+    const data = await getItem(token_name)
+    console.log("data",data)
 
 }
 export function getValidToken(name_token = "access_token") {
