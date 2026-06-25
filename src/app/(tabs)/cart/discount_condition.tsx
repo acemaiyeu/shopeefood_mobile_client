@@ -1,4 +1,4 @@
-import { SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
+import { primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import { useLocalSearchParams } from 'expo-router/build/hooks';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -60,5 +60,8 @@ const styles = StyleSheet.create({
   },
   header_value: {
     fontFamily: SF_Pro
+  },
+  food: {
+    backgroundColor: primary_color
   }
 })

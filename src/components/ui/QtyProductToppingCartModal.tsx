@@ -7,28 +7,43 @@ interface IMODAL {
   modalVisible: boolean,
   setModalVisible: (v: boolean) => void,
   data: any,
-  setQty: (param: object) => void
+  addToCart: (params: object) => void
 }
-const QtyProductCartModal = ({ modalVisible, setModalVisible, data, setQty}: IMODAL) => {
+const QtyProductToppingCartModal = ({ modalVisible, setModalVisible, data, addToCart}: IMODAL) => {
     const [param, setParam] = useState<any>({});
+    const handleAddToCart = () => {
+      const toppings = param.toppings ?? null;
+      if(toppings){
+          const new_param = {...param, toppings: param.toppings.map((i: any) => ({product_id: i.id, product_name: i.name, qty: i.qty}))}
+          addToCart(new_param)
+          return;
+      }
+        addToCart(param)
+    }
     return (
         <Modal isVisible={modalVisible} onBackdropPress={() => setModalVisible(false)} style={styles.container}>
+          {modalVisible == true &&
             <View style={styles.box}>
                 <View style={styles.header}>
-                  <Text style={styles.header_text}>{data.product_name}</Text>
+                  <Text style={styles.header_text}>{data.product_toppings[data.index_topping].name}</Text>
+                  <Text style={styles.header_text_notes}>(Món thêm không được nhiều hơn món chính)</Text>
                 </View>
                 <View style={styles.body}>
-                    <TextInput keyboardType="numeric" placeholder="Nhập số lượng vào đây" value={data.qty} style={styles.input} onChangeText={(v) => setParam({product_id: data.product_id, qty: (v == "" || v == "0" ? data.qty : v), toppings: data.list_toppings ?? null})}/>
+                    <TextInput keyboardType="numeric" value={data.product_toppings[data.index_topping].qty} style={styles.input} placeholder="Nhập số lượng vào đây" onChangeText={(v) => {
+                        console.log(v > data.qty)
+                      setParam({product_id: data.product_id, qty: data.qty, toppings: data.product_toppings.map((i: any, index: number) => index !== data.index_topping ? i : {...i, qty: ((v == "" || v == "0") ? 1 : (v > data.qty ? data.qty : v)) })})
+                    }}/>
                 </View>
                 <View style={styles.footer}>
                     <Pressable style={[styles.btn, styles.btn_text_left]} onPress={() => setModalVisible(false) }>
                       <Text style={styles.btn_text}>Hủy</Text>
                     </Pressable>
-                    <Pressable style={styles.btn} onPress={() => setQty(param)}>
+                    <Pressable style={styles.btn} onPress={() => handleAddToCart()}>
                       <Text style={styles.btn_text}>Cập nhật</Text>
                     </Pressable>
                 </View>
-            </View>
+            </View> 
+          }
         </Modal>
     );
 };
@@ -39,7 +54,7 @@ const styles = StyleSheet.create({
   },
   box: {
     backgroundColor: "#fff",
-    width: "70%",
+    width: "80%",
     height: 200,
     borderRadius: 10,
     padding: 10,
@@ -106,25 +121,25 @@ const styles = StyleSheet.create({
     height: 50  
   },
   btn: {
-      width: "50%",
-      backgroundColor: 'transparent',
-      padding: 10,
-      paddingBottom: 0
-    },
-    btn_text: {
-      textAlign: 'center',
-      fontFamily: SF_Pro_DISPLAY_BOLD,
-      color: primary_color,
-      flex: 1,
-      height: "100%",
-      alignItems: 'center',
-      justifyContent: 'center',
-      // padding: 10
-    },
-    btn_text_left: {
-      borderColor: "#ccc",
-      borderRightWidth: 1
-    },
+    width: "50%",
+    backgroundColor: 'transparent',
+    padding: 10,
+    paddingBottom: 5
+  },
+  btn_text: {
+    textAlign: 'center',
+    fontFamily: SF_Pro_DISPLAY_BOLD,
+    color: primary_color,
+    flex: 1,
+    height: "100%",
+    alignItems: 'center',
+    justifyContent: 'center',
+    // padding: 10
+  },
+  btn_text_left: {
+    borderColor: "#ccc",
+    borderRightWidth: 1
+  },
   list_topping: {
     gap: 5
   },
@@ -148,6 +163,12 @@ const styles = StyleSheet.create({
   },
   topping_container: {
     maxHeight: 400
+  },
+  header_text_notes: {
+    fontFamily: SF_Pro_DISPLAY_BOLD,
+    fontSize: 10,
+    textAlign: 'center',
+    color: primary_color
   }
 })
-export default QtyProductCartModal;
+export default QtyProductToppingCartModal;

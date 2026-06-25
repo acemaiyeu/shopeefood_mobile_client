@@ -29,6 +29,7 @@
 
 import { store } from '@/store/store';
 import { Stack } from 'expo-router';
+import Toast from 'react-native-toast-message';
 import { Provider } from 'react-redux';
 
 export default function RootLayout() {
@@ -40,6 +41,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         </Stack>
+        <Toast /> 
     </Provider>
   );
 }

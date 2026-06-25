@@ -1,9 +1,10 @@
 // Ví dụ: app/(tabs)/my-orders/index.tsx
 import { ThemedView } from '@/components/themed-view';
+import { deleteItem, primary_color, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 const styles = StyleSheet.create({
@@ -38,12 +39,30 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center"
+  },
+  logout: {
+    width: "100%",
+    padding: 10,
+    alignItems: 'center'
+  },
+  logout_text: {
+    fontFamily: SF_Pro_DISPLAY_BOLD,
+    width: 100,
+    backgroundColor: primary_color,
+    textAlign: "center",
+    color: "white",
+    padding: 10,
+    borderRadius: 10
   }
   
 })
 export default function OrderListScreen() { // Bắt buộc phải có 'default'
   const navigation: any = useNavigation();
+  const router = useRouter();
 
+  const handleLogout = () => {
+    deleteItem('access_token'); router.replace('/(auth)/login')
+  }
   return (
     <ThemedView style={styles.container}>
         <Pressable onPress={() => navigation.navigate("info")}><View style={[styles.group, styles.group_first]}>
@@ -76,6 +95,7 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
             <View><MaterialIcons name="navigate-next" size={24} color="black" /></View>
         </View>
         <View style={styles.hr}></View>
+        <View style={styles.logout}><Text style={styles.logout_text} onPress={() => handleLogout()}>Đăng xuất</Text></View>
         <View style={styles.version}>
           <Text>Phiên bản phần mềm: <Text>1.0.0</Text></Text>
         </View>

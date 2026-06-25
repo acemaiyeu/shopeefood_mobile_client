@@ -4,7 +4,7 @@ import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 // 1. Import hook lấy kích thước vùng an toàn
-import { formatMoney, primary_color } from '@/constants/const';
+import { formatMoney, primary_color, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import { getAllProducts } from '@/services/ProductService';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import { useNavigation } from 'expo-router';
@@ -64,15 +64,16 @@ export default function HomeScreen() {
             <TextInput placeholder='Cơm tấm' style={styles.input}/>
         </View>
      </View>
-     <View style={styles.nav}>
+     {/*  */}
+     <ScrollView style={styles.body}>
+        <ScrollView horizontal={true} style={styles.nav}>
         {CATEGORIES.map((ca, ca_ind) => {
           return ( <Pressable style={styles.category_item} key={ca.id} onPress={() => getProduct()}>
                 <Text style={styles.category_item_icon}>{ca.icon}</Text>
                 <Text style={styles.category_item_text}>{ca.name}</Text>
           </Pressable>)
         })}
-     </View>
-     <ScrollView style={styles.body}>
+     </ScrollView>
        {products && products.length > 0 ?
         <>
           {products.map((product: any) => {{
@@ -80,7 +81,7 @@ export default function HomeScreen() {
                <Pressable style={styles.product_item} key={product.id} onPress={() => navigation.navigate(`store`, {store_slug: product.slug, product_id: product.id})}>
                 <Image 
                     source={{ uri: product.thumbnail }} 
-                    style={{ width: 100, height: 100 }} // Ensure you provide dimensions
+                    style={{ width: 80, height: 60, borderRadius: 5 }} // Ensure you provide dimensions
                   />
                 <View style={styles.product_info}>
                     <Text style={styles.product_name}>{product.name}</Text>
@@ -91,8 +92,11 @@ export default function HomeScreen() {
                     </View>
                     <Text style={styles.product_price}>
                       {formatMoney(product.price)}
-                    </Text>
+                    </Text>  
                 </View>
+                <Text style={styles.notes}>
+                      Gần bạn
+                    </Text>
             </Pressable>
             )
           }})}
@@ -110,6 +114,7 @@ const styles = StyleSheet.create({
     // Thay vì dùng row ở gốc làm vỡ giao diện dọc, hãy xếp dọc (mặc định)
     flexDirection: 'column', 
     backgroundColor: '#fff',
+    width: "100%"
   },
   header: {
     paddingHorizontal: 5,
@@ -130,18 +135,20 @@ const styles = StyleSheet.create({
     borderRadius: 10
   },
   nav: {
+    width: '100%',
+    height: 100,
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 5,
     marginTop: 10,
-    marginBottom: 10
+    marginBottom: 10,
+    overflow: 'hidden',
+    overflowX: 'scroll',
+    backgroundColor: '#fff'
   },
   category_item: {
-    width: "11.7%",
+    width: 100,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
     // paddingHorizontal: 10,
     // paddingVertical: 10,
     paddingBottom: 10,
@@ -165,6 +172,7 @@ const styles = StyleSheet.create({
     // overflow: "hidden",
     // overflowY: "auto",
     // flex: 1
+    width: '100%'
   },
   product_item: {
     width: "99%",
@@ -173,10 +181,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 5,
     overflow: "hidden",
-    marginVertical: 5
+    marginVertical: 5,
+    position: 'relative',
+    alignItems: 'center',
+    paddingHorizontal: 5
   },
   product_info: {
-    paddingVertical: 10
+    paddingVertical: 10,
+  },
+  notes: {
+    position: 'absolute', bottom: 10, fontFamily: SF_Pro_DISPLAY_BOLD, color: "#ccc", right: 5
   },
   product_name: {
     flex: 1,

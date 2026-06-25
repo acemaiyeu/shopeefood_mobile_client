@@ -6,13 +6,16 @@ const PublicSlice = createSlice({
   initialState: { 
     cart: undefined,
     total_cart: 0,
-    login: false
+    login: 'none_login',
+    refresh_cart: 1
    },
   reducers: {
     updatePublic: (state, action) => {
+      alert(action.payload.login)
       state.cart = action.payload.cart??state.cart;
       state.total_cart = action.payload.total_cart??state.total_cart;
-      state.login = action.payload.login??state.login;
+      state.login = (action.payload.login === 'is_login' || action.payload.login === 'none_login') ? action.payload.login : state.login;
+      state.refresh_cart = action.payload.refresh_cart === true ? (state.refresh_cart == 1 ? 2 : 1) :state.refresh_cart;
     },
   },
 });

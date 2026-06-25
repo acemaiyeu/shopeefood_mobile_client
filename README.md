@@ -54,3 +54,20 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+CN=Almo, OU=Alomo, O=Almo, L=CanTho, ST=Omon, C=65
+
+What is your first and last name?
+  [Almo]:  Almo
+What is the name of your organizational unit?
+  [Almo]:  Alomo
+What is the name of your organization?
+  [Almo]:  Almo
+What is the name of your City or Locality?
+  [CanTho]:  CanTho
+What is the name of your State or Province?
+  [Omon]:  Omon
+What is the two-letter country code for this unit?
+  [65]:  65
+Is CN=Almo, OU=Alomo, O=Almo, L=CanTho, ST=Omon, C=65 correct?
+  [no]:  yes

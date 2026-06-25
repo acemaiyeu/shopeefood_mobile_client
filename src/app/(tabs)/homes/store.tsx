@@ -1,9 +1,9 @@
 import { ThemedView } from '@/components/themed-view';
 import StoreModal from '@/components/ui/StoreModal';
-import { formatMoney, primary_color, SF_Pro } from '@/constants/const';
+import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import { getStoreBySlug } from '@/services/StoreService';
 import Entypo from '@expo/vector-icons/Entypo';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -12,7 +12,17 @@ export default function Store() {
     const [store, setStore] = useState<any>({});
     const [modalVisible, setModalVisible] = useState(false);
     const [productActive, setProductActive] = useState({ name: "", price: 0 });
-    
+    const navigation: any = useNavigation();
+    const handlePressProduct = (selectedProduct: any) => {
+        // Chuẩn bị data bọc gọn gàng
+        const productData = {
+            ...selectedProduct,
+            toppings: selectedProduct.toppings ? JSON.stringify(selectedProduct.toppings) : JSON.stringify([])
+        };
+
+        // Điều hướng sang màn hình chi tiết
+        navigation.navigate("product_detail", JSON.stringify(productData));
+        };
     // Refs cho cuộn
     const scrollViewRef = useRef<ScrollView>(null);
     const groupRefs = useRef<{ [key: string]: number }>({});
@@ -54,11 +64,26 @@ export default function Store() {
             <StoreModal modalVisible={modalVisible} setModalVisible={setModalVisible} product={productActive || {}} />
             <View style={styles.header}>
                 <View style={styles.thumbnail_container}>
-                    <Image source={{ uri: store.thumbnail }} style={{ width: 150, height: 100 }} />
+                    <Image source={{ uri: store.thumbnail }} style={{ width: 130, height: 65 }} />
+                        <View style={styles.store_info}>
+                        <Text style={styles.store_name}>{store.name}</Text>
+                        <View style={styles.time}> 
+                                <View style={styles.info_time}> 
+                                        <View style={styles.info_time_box}>
+                                                <Text style={styles.info_time_box_title}>Mở cửa: </Text>
+                                                <Text style={styles.info_time_box_value}>{store.time_open}</Text>
+                                        </View>
+                                        <View style={styles.info_time_box}>
+                                                <Text style={styles.info_time_box_title}>Đóng cửa: </Text>
+                                                <Text style={styles.info_time_box_value}>{store.time_close}</Text>
+                                        </View>
+                                </View>
+                                <Text style={[styles.open, store.is_open == 1 ? styles.opening : styles.closed]}>{store.is_open ? 'Đang mở cửa' : 'Đã đóng cửa'}</Text>
+                        </View>
+                    </View>
                 </View>
-                <View style={styles.store_info}>
-                    <Text style={styles.store_name}>{store.name}</Text>
-                    <Text style={styles.store_address}>{store.address}</Text>
+                <View style={styles.address}>
+                    <Text style={styles.store_address}>Địa chỉ: {store.address}</Text>
                 </View>
             </View>
 
@@ -91,13 +116,13 @@ export default function Store() {
                         >
                             <Text style={styles.group_name}>{group.name}</Text>
                             {group?.products?.map((product: any) => (
-                                <Pressable style={styles.group_product_item} key={product.id} onPress={() => handleAddToCart(product)}>
+                                <Pressable style={styles.group_product_item} key={product.id} onPress={() => navigation.navigate("product_detail", {product: JSON.stringify(product)})}>
                                     <Image source={{ uri: product.thumbnail }} style={{ width: 50, height: 50, borderRadius: 5 }} />
                                     <View style={styles.group_product_info}>
                                         <Text style={styles.group_product_info_name}>{product.name}</Text>
                                         <Text style={styles.group_product_info_price}>{formatMoney(product.price)}</Text>
                                     </View>
-                                    <View style={styles.icon}><Entypo name="circle-with-plus" size={24} color={primary_color} /></View>
+                                    <Pressable style={styles.icon} onPress={() => handleAddToCart(product)}><Entypo name="circle-with-plus" size={24} color={primary_color} /></Pressable>
                                 </Pressable>
                             ))}
                         </View>
@@ -112,9 +137,9 @@ export default function Store() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#ebebebad', alignItems: "center" },
-    header: { width: "98%", height: 145, backgroundColor: "#fff", flexDirection: "row", marginBottom: 10 },
-    thumbnail_container: { padding: 20 },
-    store_info: { flex: 1, padding: 10 },
+    header: { width: "98%", backgroundColor: "#fff", marginBottom: 10, padding: 5 },
+    thumbnail_container: { width: "100%", padding: 5, flexDirection: "row", gap: 5 },
+    store_info: { flex: 1},
     store_name: { fontSize: 20, fontWeight: "600" },
     store_address: { fontSize: 11, color: "#6d6c6c" },
     body: { width: "100%", flex: 1, paddingHorizontal: 10, gap: 10},
@@ -129,5 +154,14 @@ const styles = StyleSheet.create({
     group_product_info: { flex: 1, paddingHorizontal: 10 },
     group_product_info_name: { fontWeight: "600", fontFamily: SF_Pro },
     group_product_info_price: { color: "red" },
-    icon: {justifyContent: "center"}
+    icon: {justifyContent: "center"},
+    time: {width: "100%", alignItems: 'flex-start'},
+    info_time: {flexDirection: "row", gap: 10},
+    info_time_box: {flexDirection: "row", gap: 5},
+    info_time_box_title: {fontFamily: SF_Pro_DISPLAY_BOLD, fontSize: 12},
+    info_time_box_value: {fontFamily: SF_Pro_DISPLAY_BOLD, color: primary_color, fontSize: 12},
+    opening: {color: "green"},
+    closed: {color: "red"},
+    open: {fontFamily: SF_Pro, fontSize: 12},
+    address: {paddingHorizontal: 10}
 });

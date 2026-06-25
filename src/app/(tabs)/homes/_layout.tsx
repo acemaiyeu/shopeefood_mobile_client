@@ -6,6 +6,7 @@ export default function HomeLayout() {
       {/* Màn hình chi tiết đơn */}
       <Stack.Screen name="home" options={{ title: 'Trang chủ' }} />
       <Stack.Screen name="store" options={{ title: 'Cửa hàng' }} />
+      <Stack.Screen name="product_detail" options={{ title: 'Thông tin sản phẩm' }} />
     
     </Stack>
   );

@@ -6,7 +6,6 @@ import { useEffect } from 'react'; // Cần thêm useEffect
 import { useColorScheme } from 'react-native';
 import { Provider, useSelector } from 'react-redux';
 // Thay đổi import toast ở đây
-import Toast from 'react-native-toast-message';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
@@ -54,7 +53,7 @@ export default function TabLayout() {
         </Tabs>
 
         {/* Cần đặt Toast ở cuối cùng để nó hiển thị đè lên trên cùng */}
-        <Toast /> 
+        
       </ThemeProvider>
     </Provider>
   );

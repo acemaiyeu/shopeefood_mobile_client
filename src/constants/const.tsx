@@ -62,13 +62,18 @@ export async function setItem(key: string, value: string) {
 export async function deleteItem(key: string) {
   await SecureStore.deleteItemAsync(key);
 }
-export function formatMoney(amount: any, removeDD = false) {
-    // Nếu removeDD = true thì dùng 'decimal' (chỉ lấy số), ngược lại dùng 'currency' (thêm chữ đ)
-    const options: any = removeDD 
-        ? { style: 'decimal' } 
+export function formatMoney(amount: any, removeDD: boolean = false): string {
+    // 1. Chuyển đổi amount sang kiểu số, nếu không hợp lệ (NaN) thì mặc định là 0
+    const numericAmount = Number(amount);
+    const safeAmount = isNaN(numericAmount) ? 0 : numericAmount;
+
+    // 2. Cấu hình options dựa trên removeDD
+    const options: Intl.NumberFormatOptions = removeDD 
+        ? { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 2 } 
         : { style: 'currency', currency: 'VND' };
 
-    return new Intl.NumberFormat('vi-VN', options).format(amount);
+    // 3. Trả về chuỗi đã format
+    return new Intl.NumberFormat('vi-VN', options).format(safeAmount);
 }
 
 

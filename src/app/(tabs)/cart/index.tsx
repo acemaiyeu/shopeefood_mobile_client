@@ -1,31 +1,46 @@
 import DiscountModal from "@/components/ui/DiscountModal";
+import PaymentCartModal from "@/components/ui/PaymentCartModal";
 import QtyProductCartModal from "@/components/ui/QtyProductCartModal";
+import QtyProductToppingCartModal from "@/components/ui/QtyProductToppingCartModal";
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from "@/constants/const";
-import { addCart, getMyCart } from "@/services/CartService";
+import { addCart, getMyCart, updateToCart } from "@/services/CartService";
 import { updatePublic } from "@/store/features/PublicSlice";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import Feather from '@expo/vector-icons/Feather';
-import { useEffect, useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import no_thumbnail from '../../../../assets/images/no-thumbnail.jpg';
 const Cart = () => {
-    const {total_cart} = useSelector((state: any) => state.public)
+    const {total_cart, refresh_cart} = useSelector((state: any) => state.public)
     const [cart, setCart] = useState<any>({});
+    const [refreshing, setRefreshing] = useState(false);
+    const timeoutSearch: any = useRef(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalDiscountVisible, setModalDiscountVisible] = useState(false);
+    const [modalPaymentVisible, setModalPaymentVisible] = useState(false);
+    const [modalToppingVisible, setModalToppingVisible] = useState(false);
     const dispatch = useDispatch();
     const [dataModel, setDataModal] = useState({});
+    const [dataToppingModel, setDataToppingModal] = useState({});
     const getCart = async() => {
         const data: any = await getMyCart();
         if(data){
             setCart({...data})
         }
     }
+
+    const fetchData = async () => {
+        setRefreshing(true);
+        // Fetch your updated API data here
+            await getCart()
+        // setData(newData);
+        setRefreshing(false);
+    };
+    
     useEffect(() => {
         getCart()
-    }, [total_cart])
+    }, [refresh_cart])
 
     const handleAddToCart = async (param: object) => {
         const data: any = await addCart(param);
@@ -33,73 +48,93 @@ const Cart = () => {
            getCart() 
             dispatch(updatePublic({total_cart: data.total_cart}))
             setModalVisible(false)
+            setModalToppingVisible(false)
         }
     }
-    const updateCart = (params) => {
-            
+
+     const handleChangeQty = (index: number, detail: any, new_qty: number) => {
+            setCart({...cart, details: cart.details.map((i: any, i_index: number) => i_index !== index ? i : {...i, qty: new_qty} )})
+            if (timeoutSearch.current) {
+                clearTimeout(timeoutSearch.current);
+            }
+            if(new_qty > 0){
+                 // Set the new timeout and store its ID in the ref
+            timeoutSearch.current = setTimeout(() => {
+                const obj = {product_id: detail.product_id, qty: new_qty, toppings: detail.list_toppings}
+                handleAddToCart(obj)
+
+            }, 1000);
+            }       
+    };
+
+    const updateCart = async (params: object) => {
+        const data: any = await updateToCart(params);
+        if(data){
+            await getCart()
+            setModalPaymentVisible(false)
+        }
     }
     return (
-        <ScrollView style={styles.container} >
+        <ScrollView style={styles.container} refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
+      }>
             
             
             {!cart.id ? <Text style={styles.container_text}>Giỏ hàng của bạn đang trống!</Text> : 
             <>
                 <QtyProductCartModal modalVisible={modalVisible} setModalVisible={setModalVisible} data={dataModel}  setQty={handleAddToCart} />
                 <DiscountModal modalVisible={modalDiscountVisible} setModalVisible={setModalDiscountVisible} cart={cart} setCart={updateCart} />
+                <PaymentCartModal modalVisible={modalPaymentVisible} setModalVisible={setModalPaymentVisible} cart={cart} updateCart={updateCart} />
+                <QtyProductToppingCartModal modalVisible={modalToppingVisible} setModalVisible={setModalToppingVisible} data={dataToppingModel} addToCart={handleAddToCart}/>
                 <View style={styles.box}>    
-                    {cart.details && cart.details.length > 0 && cart.details.map((detail: any) => {
+                    {cart.details && cart.details.length > 0 && cart.details.map((detail: any, detail_index: number) => {
                         return(
                         <View style={styles.product_item} key={detail.id}>
                             <Pressable style={styles.product_item_x} onPress={() => handleAddToCart({product_id: detail.product_id, qty: 0})}>
                                 <Feather name="x-square" size={24} color={primary_color} />
                             </Pressable>
                             <View style={styles.product_detail_item}>
-                                <Image source={{ uri: detail.product.thumbnail }}  style={{width: 100, height: 50, borderRadius: 5}} />
+                                <Image source={{ uri: detail.product.thumbnail }}  style={{width: 50, height: 50, borderRadius: 5}} />
                                 <View style={styles.product_info}>
                                     <Text style={styles.product_name}>{detail.product_name}</Text>
-                                    <Text style={styles.product_price}>{formatMoney(detail.product_price)}</Text>
+                                    <Text style={styles.product_price}>{formatMoney(detail.product_price) + ""}</Text>
                                 </View>
                                 <View style={styles.product_qty}>
                                         <View style={styles.box_qty}>
-                                            <AntDesign name="minus-square" size={15}  color={primary_color} />
-                                            <Text  style={styles.box_qty_text} onPress={() => {setDataModal(detail); setModalVisible(true)}}>{detail.qty}</Text>
+                                            <AntDesign name="minus-square" size={15}  color={primary_color} onPress={() => handleChangeQty(detail_index,detail, detail.qty - 1)}/>
+                                            <Text  style={styles.box_qty_text} onPress={() => {setDataModal(detail); setModalVisible(true)}}>{detail.qty + ""} </Text>
                                             {/* <AntDesign name="plus" size={15} color="white" /> */}
-                                            <AntDesign name="plus-square" size={15} color={primary_color} />
+                                            <AntDesign name="plus-square" size={15} color={primary_color} onPress={() => handleChangeQty(detail_index, detail, detail.qty + 1)}/>
                                         </View>
                                         <View style={styles.total_price}>
                                                 <Text style={styles.total_price_text}>Tổng tiền: </Text>
-                                                <Text style={styles.total_price_value}>{formatMoney(detail.total_price)}</Text>
+                                                <Text style={styles.total_price_value}>{formatMoney(detail.total_price).toString()}</Text>
                                         </View>
                                 </View>
                             </View>
                             {detail.product_toppings && detail.product_toppings.length > 0 && 
                                 <View style={styles.product_topping}>
-                                    <Text style={styles.product_topping_item_text}>Topping: </Text>
-                                    {detail.product_toppings.map((pro: any) => {
-                                        const imageSource = pro?.thumbnail 
-                                        ? { uri: pro.thumbnail } 
-                                        : no_thumbnail;
+                                    {detail.product_toppings.map((pro: any, pro_index: number) => {
                                         return(
-                                            
-                                            <View style={[styles.product_topping_item, styles.bder]} key={pro.id}>
-                                                    <Image source={imageSource}  style={{width: 100, height: 50, borderRadius: 5}} />
+                                            <Pressable style={[styles.product_topping_item, styles.bder]} key={pro.id} onPress={() => {setDataToppingModal({...detail, index_detail: detail_index, index_topping: pro_index}); setModalToppingVisible(true)}}>
                                                     <View style={styles.product_info}>
-                                                        <Text style={styles.product_name}>{pro.name}</Text>
-                                                        <Text style={styles.product_price}>{formatMoney(pro.price)}</Text>
+                                                        <View style={styles.product_name_topping}>
+                                                            <Text style={styles.product_name_topping_name}>{pro.name} </Text> 
+                                                            <Text style={styles.product_name_topping_price}>({formatMoney(pro.price).toString()})</Text>
+                                                        </View>
+                                                        {/* <Text style={styles.product_price}>{formatMoney(pro.price)}</Text> */}
                                                     </View>
                                                     <View style={styles.product_qty}>
-                                                            <View style={styles.box_qty}>
-                                                                <AntDesign name="minus-square" size={15}  color={primary_color} />
-                                                                <Text  style={styles.box_qty_text}>1</Text>
+                                                            <View style={styles.box_qty_topping}>
+                                                                <Text style={styles.box_qty_text_topping}>x{(pro.qty??1)}</Text>
                                                                 {/* <AntDesign name="plus" size={15} color="white" /> */}
-                                                                <AntDesign name="plus-square" size={15} color={primary_color} />
-                                                            </View>
-                                                            <View style={styles.total_price}>
-                                                                    <Text style={styles.total_price_text}>Tổng tiền: </Text>
-                                                                    <Text style={styles.total_price_value}>{formatMoney(40000)}</Text>
-                                                            </View>
-                                                </View>
-                                            </View>
+                                                                <View style={styles.total_price_topping}>
+                                                                    <Text style={styles.total_price_topping_text}>Tổng tiền: </Text>
+                                                                    <Text style={styles.total_price_topping_value}>{formatMoney(pro.price * (pro.qty??1))}</Text>
+                                                                </View>
+                                                            </View> 
+                                                    </View>
+                                            </Pressable>
                                         )
                                     })}
                                     
@@ -120,7 +155,7 @@ const Cart = () => {
                 </View>
             </Pressable>
 
-            <Pressable style={styles.box}> 
+            <Pressable style={styles.box} onPress={() => setModalPaymentVisible(true)}> 
                 <View style={styles.box_item}>
                         <Text style={styles.box_item_text}>Phương thức thanh toán: </Text>
                         <Text style={styles.box_item_value}>{cart.type_payment === 'cash' ? "Thanh toán khi nhận hàng" : 'Chuyển khoản'}</Text>
@@ -183,6 +218,12 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         marginVertical: 10,
         borderRadius: 5,
+        marginHorizontal: 'auto'
+    },
+    box_qty_topping: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-evenly'
     },
     product_item: {
         gap: 5,
@@ -212,8 +253,33 @@ const styles = StyleSheet.create({
     },
     product_name: {
         fontFamily: SF_Pro_DISPLAY_BOLD,
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: "600"
+    },
+    product_name_topping: {
+        flexDirection: "row",
+        alignItems: 'center'
+    },
+    product_name_topping_name: {
+        fontFamily: SF_Pro_DISPLAY_BOLD,
+        fontSize: 12,
+        fontWeight: "600"
+    },
+    product_name_topping_price: {
+        fontFamily: SF_Pro_DISPLAY_BOLD,
+        fontSize: 12,
+        fontWeight: "600",
+        color: primary_color
+    },
+    total_price_topping_text: {
+        fontSize: 12,
+        fontFamily: SF_Pro,
+    },
+    total_price_topping_value: {
+        fontSize: 12,
+        color: primary_color,
+        fontWeight: "600",
+        fontFamily: SF_Pro_DISPLAY_BOLD
     },
     product_price: {
         fontWeight: "500",
@@ -242,7 +308,18 @@ const styles = StyleSheet.create({
         // fontWeight: "600",
         // minWidth: 30,
         // textAlign: 'center',
-        fontSize: 15
+        fontSize: 15,
+        // width: "100%",
+        textAlign: "center"
+    },
+    box_qty_text_topping: {
+        color: primary_color,
+        // fontWeight: "600",
+        // minWidth: 30,
+        // textAlign: 'center',
+        fontSize: 12,
+        width: "100%",
+        textAlign: "center"
     },
     total_price: {
         flexDirection: "row",   
@@ -254,6 +331,9 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: primary_color
     },
+    total_price_topping: {
+        flexDirection: 'row'
+    },
     product_topping: {
         width: "100%",
         position: 'relative',
@@ -264,7 +344,7 @@ const styles = StyleSheet.create({
     },
     product_topping_item: {
         flexDirection: "row",
-        width: "80%",
+        width: "90%",
         paddingHorizontal: 5,
         alignItems: 'center',
         borderRadius: 5
@@ -340,6 +420,7 @@ const styles = StyleSheet.create({
     },
     box_item_payment_item_text: {
         fontFamily: SF_Pro_DISPLAY_BOLD,
+        maxWidth: "65%"
     },
     box_item_payment_item_value: {
         fontFamily: SF_Pro_DISPLAY_BOLD,

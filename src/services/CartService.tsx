@@ -16,7 +16,17 @@ export const getMyCart = async () => {
 
 export const addCart = async (params: object) => {
     try {
+        console.log("params",params)
         const res = await axiosToken.post('/add-to-cart', params);
+        return res; // Return the actual data
+    } catch (e) {
+        console.error('Error fetching cart:', e);
+        throw e; // Rethrow to handle in the component/calling function
+    }
+};
+export const updateToCart = async (params: object) => {
+    try {
+        const res = await axiosToken.put('/cart', params);
         return res; // Return the actual data
     } catch (e) {
         console.error('Error fetching cart:', e);

@@ -1,4 +1,4 @@
-import { formatMoney, primary_color, SF_Pro } from "@/constants/const";
+import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from "@/constants/const";
 import { addCart } from "@/services/CartService";
 import { updatePublic } from "@/store/features/PublicSlice";
 import { toast } from "@/utils/toast";
@@ -16,7 +16,8 @@ interface IMODAL {
 }
 interface toppingC {
   id: number,
-  product_id: number
+  product_id: number,
+  qty: number
 }
 interface IdataAddCart {
   product_id: number | undefined,
@@ -34,29 +35,31 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
       product_id: product.id,
       qty: 1
     })
-    setToppingChoose([])
+    
   }, [product.id])
+  useEffect(() => {
+    setToppingChoose([])
+  }, [modalVisible])
   const addToCart = async () => {
     const data: any = await addCart({...dataAddCart, toppings: toppingChoose});
     if(data){
-        dispatch(updatePublic({total_cart: data.total_cart}))
+        dispatch(updatePublic({total_cart: data.total_cart, refresh_cart: true}))
         toast("Thêm giỏ hàng thành công!")
         setModalVisible(false)
-        
     }
   }
     return (
         <Modal isVisible={modalVisible} onBackdropPress={() => setModalVisible(false)} style={styles.container}>
             <View style={styles.box}>
                 <View>
-                  <Text style={styles.header_text}>Bạn đang muốn?</Text>
+                  {/* <Text style={styles.header_text}>Bạn đang muốn?</Text> */}
                 </View>
                 <View style={styles.hr}></View>
                 <View style={styles.body}>
                   <View style={styles.product_infos}>
                     <View style={styles.products}>
                       <Image source={{uri: product.thumbnail}} style={{width: 100, height: 50, borderRadius: 5}} />
-                      <View style={styles.product_info}>
+                      <View>
                         <Text style={styles.name}>{product.name}</Text>
                         <Text style={styles.price}>{formatMoney(product.price)}</Text>
                       </View>
@@ -76,16 +79,15 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
                     </View>
                   </View>
                   <ScrollView style={styles.topping_container}>
-                    
-                      {product.toppings && product.toppings.length > 0 && product.toppings.map((topping) => {
+                      {product.toppings && product.toppings.length > 0 && product.toppings.map((topping: any) => {
                         if(topping.details && topping.details.length > 0){
                             return (
-                              <View style={styles.toppings} key={topping.id}>
+                              <View key={topping.id}>
                                   <Text style={styles.topping_header}>
                                       {topping.name}:
                                   </Text>
                                   <ScrollView style={styles.list_topping}>
-                                      {topping.details.map((detail) => {
+                                      {topping.details.map((detail: any) => {
                                           return (
                                             <View style={styles.topping_item} key={detail.id}>
                                                 <Text style={styles.topping_item_name}>{detail.product.name}</Text>
@@ -104,7 +106,8 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
                                                     if(check_exists === -1){
                                                       const ob = {
                                                         id: detail.id,
-                                                        product_id: detail.product.id
+                                                        product_id: detail.product.id,
+                                                        qty: 1
                                                       }
                                                       setToppingChoose([...toppingChoose, ob])
                                                     }
@@ -121,8 +124,10 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
                       })}
                   </ScrollView>
                 </View>
-                <View style={styles.hr}></View>
                  <View style={styles.footer}>
+                  <Pressable style={[styles.btn, styles.btn_text_left]} onPress={() => setModalVisible(false) }>
+                                        <Text style={styles.btn_text}>Hủy</Text>
+                                      </Pressable>
                   <Pressable style={styles.btn} onPress={() => addToCart()}>
                       <Text style={styles.btn_text} >Thêm vào giỏ hàng</Text>
                   </Pressable>
@@ -140,6 +145,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 10,
     padding: 10,
+    paddingBottom: 0,
     marginBottom: 30,
   },
   header_text: {
@@ -186,21 +192,32 @@ const styles = StyleSheet.create({
     color: primary_color,
   },
   footer: {
-    flexDirection: "row",
-    gap: 1
+    width: "100%",
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderColor: "#ccc",  
+    height: 50  
   },
   btn: {
-    width: "100%",
-    fontSize: 15,
-    backgroundColor: primary_color,
-    padding: 10,
-    borderRadius: 5
-  },
-  btn_text: {
-    fontSize: 15,
-    color: "#fff",
-    textAlign: "center"
-  },
+      width: "50%",
+      backgroundColor: 'transparent',
+      padding: 10,
+      paddingBottom: 0
+    },
+    btn_text: {
+      textAlign: 'center',
+      fontFamily: SF_Pro_DISPLAY_BOLD,
+      color: primary_color,
+      flex: 1,
+      height: "100%",
+      alignItems: 'center',
+      justifyContent: 'center',
+      // padding: 10
+    },
+    btn_text_left: {
+      borderColor: "#ccc",
+      borderRightWidth: 1
+    },
   list_topping: {
     gap: 5
   },

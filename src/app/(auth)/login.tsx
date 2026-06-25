@@ -4,13 +4,12 @@ import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'r
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 // 1. Import hook lấy kích thước vùng an toàn
-import { apiURL, formGroupGlobal, primary_color, setTokenWithExpiry, SF_Pro } from '@/constants/const';
+import { apiURL, formGroupGlobal, primary_color, setTokenWithExpiry, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import axiosAuth from '@/services/axiosAuth';
-import { updatePublic } from '@/store/features/PublicSlice';
 import { toast } from '@/utils/toast';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import axios from 'axios';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
@@ -39,6 +38,7 @@ export default function HomeScreen() {
   // 2. Lấy thông số khoảng cách an toàn của thiết bị hiện tại
   const [formData, setFormData] = useState({});
   const dispatch = useDispatch();
+  const router = useRouter();
   const handleLogin = async () => {
             await axios.post(`${apiURL}/api/login`, {
                 ...formData
@@ -47,7 +47,7 @@ export default function HomeScreen() {
                   // console.log('res', res.data.access_token, res.data.expires_in)
                   setTokenWithExpiry('access_token', res.data.access_token, res.data.expires_in);
                   toast("Đăng nhập thành công!");
-                  dispatch(updatePublic({login: true}))
+                  router.replace('/(tabs)/homes');
                 }
             }).catch((e) => {
               if (e.response) {
@@ -65,7 +65,7 @@ export default function HomeScreen() {
                   console.log("Response Headers:", e.response.headers);
                   console.log("------------------------");
 
-                  toast("Lỗi xảy ra, kiểm tra console để xem chi tiết.", "error");
+                  toast("Tài khoản hoặc mật khẩu không chính xác", "error");
                 } else if (e.request) {
                   console.log("Không nhận được phản hồi từ server:", e.request);
                 } else {
@@ -139,12 +139,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   test: {
     backgroundColor: primary_color,
-    borderWidth: 1
+    // borderWidth: 1
+    padding: 5,
+    borderRadius: 5
   },
   button_text: {
     textAlign: 'center',
     color: "#fff",
-    fontFamily: SF_Pro
+    fontFamily: SF_Pro_DISPLAY_BOLD
   },
   container: {
     flex: 1,
