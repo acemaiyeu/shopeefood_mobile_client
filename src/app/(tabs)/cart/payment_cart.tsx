@@ -1,22 +1,28 @@
 import { primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from "@/constants/const";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import * as Sharing from 'expo-sharing';
+import { useRef, useState } from "react";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import QRCode from 'react-native-qrcode-svg';
+import ViewShot from 'react-native-view-shot';
 import { useSelector } from "react-redux";
-import qr from '../../../../assets/images/qr.png';
 const paymentCart = () => {
     const [refreshing, setRefreshing] = useState(false);
     const { order } = useSelector((state: any) => state.public) 
-
+    
     const fetchData = async () => {
         setRefreshing(true);
         // Fetch your updated API data here
         // setData(newData);
         setRefreshing(false);
     };
+    const viewShotRef = useRef<any>(null);
     
-    useEffect(() => {
-        console.log("order", order.status_name)
-    },[order])
+
+        const saveQR = async () => {
+        const uri = await viewShotRef.current.capture();
+
+        await Sharing.shareAsync(uri);
+        };
         
     return (
         <ScrollView style={styles.container} refreshControl={
@@ -53,9 +59,29 @@ const paymentCart = () => {
                         }
                     </View>
                      {order.status === "CONFIRMED" && 
+                     <>
                      <View style={styles.box_item}>
-                            <Image source={qr} style={{width: 100, height: 100, borderRadius: 5, marginTop: 30}} />
-                     </View>}
+                                <View style={styles.qr_box}>
+                                    <ViewShot  ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
+                                        <QRCode
+                                            value={order.qr}
+                                            size={220}
+                                        />
+                                    </ViewShot>
+                                    <Text style={styles.download} onPress={() => saveQR()}>Tải về</Text>
+                                    </View>
+                     </View>
+                      <View style={styles.box_item}>
+                            <Text style={styles.box_item_text}>Người thụ hưởng: </Text>
+                            <Text style={styles.box_item_value}>{order.store_name ?? "Mặc định"}</Text>
+                    </View>
+                     <View style={styles.box_item}>
+                            <Text style={styles.box_item_text}>Giá trị cần thanh toán: </Text>
+                            <Text style={styles.box_item_value}>{order.grand_total ?? "Mặc định"}</Text>
+                    </View>
+                    </>
+                     }
+                     
             </View> : <View style={styles.box}>
                     <View style={styles.box_item}>
                             <Text style={[styles.box_item_value, styles.title]}>KHÔNG TÌM THẤY ĐƠN HÀNG</Text>
@@ -98,6 +124,18 @@ const styles = StyleSheet.create({
     box_item_notes: {
         fontSize: 12,
         fontStyle: 'italic',
+    },
+    qr_box: {
+        padding: 10,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: "#ccc"
+    },
+    download: {
+        backgroundColor: 'transparent',
+        textAlign: 'center',
+        color: primary_color,
+        paddingTop: 15
     }
 })
 export default paymentCart;    

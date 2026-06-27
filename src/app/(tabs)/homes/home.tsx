@@ -4,12 +4,16 @@ import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 // 1. Import hook lấy kích thước vùng an toàn
-import { formatMoney, primary_color, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
+import { formatMoney, getItem, primary_color, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import { getAllProducts } from '@/services/ProductService';
+import { getProfile } from '@/services/UserService';
+import { updatePublic } from '@/store/features/PublicSlice';
+import { useWS } from '@/store/socket/WebSocketProvider';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDispatch, useSelector } from 'react-redux';
 const CATEGORIES = [
   { id: 1, name: 'Cơm', icon: '🍛' },
   { id: 2, name: 'Trà Sữa', icon: '🧋' },
@@ -38,24 +42,86 @@ function getDevMenuHint() {
     </ThemedText>
   );
 }
+// Hàm tiện ích giúp dừng tiến trình (delay) một khoảng thời gian bằng async/await
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export default function HomeScreen() {
-  // 2. Lấy thông số khoảng cách an toàn của thiết bị hiện tại
   const insets = useSafeAreaInsets();
+  const navigation: any = useNavigation();
+  const dispatch = useDispatch();
+  const { connect } = useWS();
+
   const [products, setProducts] = useState([]);
   const [params, setParams] = useState({});
-  const navigation: any = useNavigation();
-
-  const getProduct = async () => {
-    const rs: any = await getAllProducts(params);
-    if(rs?.data){
-        setProducts(rs.data)
-        setParams({...params, ...rs.meta})
-    }
-  }
-  useEffect(() => {
-    getProduct()
-  }, [])
   
+  // Lấy profile từ Redux Store
+  const { profile } = useSelector((state: any) => state.public);
+
+  // 1. Hàm lấy danh sách sản phẩm
+  const getProduct = async () => {
+    try {
+      const rs: any = await getAllProducts(params);
+      if (rs?.data) {
+        setProducts(rs.data);
+        setParams({ ...params, ...rs.meta });
+      }
+    } catch (error) {
+      console.log("Lỗi lấy sản phẩm:", error);
+    }
+  };
+
+  // 2. Hàm xử lý lấy Profile một cách an toàn
+  const fetchProfileIfNeeded = async () => {
+    // Nếu trong Redux đã có profile id rồi thì không cần lấy lại nữa
+    if (profile?.id) return;
+
+    try {
+      let token = await getItem('access_token');
+      let retryCount = 0;
+
+      // Thay thế vòng lặp while lỗi bằng vòng lặp đợi bất đồng bộ an toàn
+      // Thử lại tối đa 3 lần, mỗi lần cách nhau 500ms nếu chưa tìm thấy token trong Storage
+      while ((!token || typeof token !== 'string') && retryCount < 3) {
+        console.log(`Chưa thấy token, đang thử lại lần ${retryCount + 1}...`);
+        await sleep(500); // Đợi 500ms một cách đồng bộ trước khi kiểm tra lại
+        token = await getItem('access_token');
+        retryCount++;
+      }
+
+      // Kiểm tra lại lần cuối, nếu thực sự không có token thì dừng lại (chưa đăng nhập)
+      if (!token || typeof token !== 'string') {
+        console.log("Không tìm thấy token hợp lệ. Người dùng chưa đăng nhập.");
+        return;
+      }
+
+      // Gọi API lấy thông tin profile (AxiosAuth interceptor sẽ tự đính kèm token vừa ghi)
+      const response: any = await getProfile();
+
+      if (response && response.data) {
+        console.log("Dữ liệu profile tải thành công:", response.data);
+        
+        // Cập nhật vào Redux và kết nối Socket
+        dispatch(updatePublic({ 
+          profile: response.data, 
+          total_cart: response.data.total_cart 
+        }));
+        connect(response.data.uid);
+      }
+    } catch (error) {
+      console.log("Lỗi khi xử lý tải profile tại Home:", error);
+    }
+  };
+
+  // 3. Quản lý các hiệu ứng vòng đời component bằng useEffect riêng biệt
+  useEffect(() => {
+    getProduct();
+  }, []);
+
+  useEffect(() => {
+    fetchProfileIfNeeded();
+  }, [profile?.id]); // Chạy lại nếu profile.id thay đổi
+
+            
   return (
     <ThemedView style={styles.container}>
      <View style={styles.header}>

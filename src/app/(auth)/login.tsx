@@ -1,11 +1,9 @@
-import * as Device from 'expo-device';
-import { Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-// 1. Import hook lấy kích thước vùng an toàn
 import { apiURL, formGroupGlobal, primary_color, setTokenWithExpiry, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import axiosAuth from '@/services/axiosAuth';
+import { updatePublic } from '@/store/features/PublicSlice';
 import { toast } from '@/utils/toast';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import axios from 'axios';
@@ -14,121 +12,138 @@ import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
 import logo from '../../../assets/images/logo1.png';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+// Import Linking để xử lý mở URL bên ngoài trên điện thoại
+import * as Linking from 'expo-linking';
 
 export default function HomeScreen() {
-  // 2. Lấy thông số khoảng cách an toàn của thiết bị hiện tại
-  const [formData, setFormData] = useState({});
-  const dispatch = useDispatch();
+  const [formData, setFormData] = useState<any>({});
+  const dispatch = useDispatch(); // Khai báo chuẩn ở đây
   const router = useRouter();
-  const handleLogin = async () => {
-            await axios.post(`${apiURL}/api/login`, {
-                ...formData
-            }).then(async (res: any) => {
-                if(res.data){
-                  // console.log('res', res.data.access_token, res.data.expires_in)
-                  setTokenWithExpiry('access_token', res.data.access_token, res.data.expires_in);
-                  toast("Đăng nhập thành công!");
-                  router.replace('/(tabs)/homes');
-                }
-            }).catch((e) => {
-              if (e.response) {
-                  // Đối tượng e.config chứa thông tin request
-                  // Đối tượng e.response chứa thông tin phản hồi từ server
-                  
-                  console.log("--- CHI TIẾT LỖI API ---");
-                  console.log("Request URL:", `${apiURL}/api/auth` + e.config.url);
-                  const payload = e.config.data ? JSON.parse(e.config.data) : "Không có payload";
-                  console.log("Payload (Request Body):", payload);
-                  console.log("Request Method:", e.config.method?.toUpperCase());
-                  console.log("Status Code:", e.response.status, e.response.statusText);
-                  console.log("Remote Address:", e.request._responseURL || "N/A"); // Lưu ý: React Native có thể không trả về đầy đủ Remote Address giống trình duyệt
-                  console.log("Request Headers:", e.config.headers);
-                  console.log("Response Headers:", e.response.headers);
-                  console.log("------------------------");
-
-                  toast("Tài khoản hoặc mật khẩu không chính xác", "error");
-                } else if (e.request) {
-                  console.log("Không nhận được phản hồi từ server:", e.request);
-                } else {
-                  console.log("Lỗi thiết lập request:", e.message);
-                }
-            })
-    };
-    const handleGoogleLogin = async () => {
-    try {
-        // Gọi lên API Laravel xin cái link Google auth
-        const response = await axiosAuth.get('/google');
-        
-        // Chuyển hướng trình duyệt qua trang login của Google
-        if (response.data.url) {
-            window.location.href = response.data.url;
-        }
-    } catch (error) {
-        console.error('Lỗi lấy link Google:', error);
-    }
-};
+  const [loadding, setLoadding] = useState<boolean>(false);
   const insets = useSafeAreaInsets();
   const navigation: any = useNavigation();
+
+  // Hàm lấy thông tin cá nhân
+  const getProfile = async (token: string) => {
+    try {
+      const res = await axios.post(`${apiURL}/api/auth/profile`, {}, {
+        headers: { // Sửa lại đúng cấu trúc trường headers của axios
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log("Dữ liệu profile thành công:", res.data);
+      dispatch(updatePublic({
+        profile: res.data, 
+        total_cart: res.data.total_cart
+      }));
+    } catch (e) {
+      console.log("Lỗi khi lấy thông tin profile trong login:", e);
+    }
+  };
+
+  // Hàm xử lý Đăng nhập thông thường
+  const handleLogin = async () => {
+    // 🛑 ĐÃ XÓA DÒNG `const dispatch = useDispatch();` BỊ LỖI Ở ĐÂY
+    setLoadding(true);
+    try {
+      const res: any = await axios.post(`${apiURL}/api/login`, {
+        ...formData
+      });
+
+      if (res.data) {
+        setTokenWithExpiry('access_token', res.data.access_token, res.data.expires_in);
+        await getProfile(res.data.access_token);
+        toast("Đăng nhập thành công!");
+        router.replace('/(tabs)/homes/home');
+      }
+    } catch (e: any) {
+      if (e.response) {
+        console.log("--- CHI TIẾT LỖI API ---");
+        console.log("Request URL:", `${apiURL}/api/auth` + e.config.url);
+        const payload = e.config.data ? JSON.parse(e.config.data) : "Không có payload";
+        console.log("Payload (Request Body):", payload);
+        console.log("Status Code:", e.response.status, e.response.statusText);
+        console.log("------------------------");
+
+        toast("Tài khoản hoặc mật khẩu không chính xác", "error");
+      } else if (e.request) {
+        console.log("Không nhận được phản hồi từ server:", e.request);
+      } else {
+        console.log("Lỗi thiết lập request:", e.message);
+      }
+    } finally {
+      setLoadding(false); // Đảm bảo trạng thái loading luôn được tắt kể cả khi lỗi
+    }
+  };
+
+  // Hàm xử lý Đăng nhập bằng Google
+  const handleGoogleLogin = async () => {
+    try {
+      const response = await axiosAuth.get('/google');
+      
+      if (response.data.url) {
+        // Kiểm tra nếu chạy trên Web thì dùng href, chạy trên App thì dùng Linking của Expo
+        if (Platform.OS === 'web') {
+          window.location.href = response.data.url;
+        } else {
+          await Linking.openURL(response.data.url);
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi lấy link Google:', error);
+      toast("Không thể kết nối dịch vụ Google", "error");
+    }
+  };
+
   return (
-    <ThemedView style={styles.container}>
-      {/* 3. Cộng thêm insets.top vào header để tự động tránh tai thỏ */}
-        <View style={[styles.header]}>
-            {/* <Text style={styles.headerText}>Quán nhỏ</Text> */}
-            <Image source={logo} style={{width: 150, height: 150, borderRadius: 5}}/>
+    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+            <Image source={logo} style={{ width: 150, height: 150, borderRadius: 5 }} />
         </View>
 
-        
-
-        
-        
         <View style={styles.body}>
-          <View >
+          <View>
             <Text style={styles.title}>Đăng nhập tài khoản của bạn: </Text>
           </View>
-            <View style={formGroupGlobal.group}>
+          <View style={formGroupGlobal.group}>
               <Text style={formGroupGlobal.text}>Email: </Text>
-              <TextInput style={formGroupGlobal.input} onChangeText={(v) => setFormData({...formData, email: v})}></TextInput>
+              <TextInput 
+                autoCapitalize="none"
+                keyboardType="email-address"
+                style={formGroupGlobal.input} 
+                onChangeText={(v) => setFormData({ ...formData, email: v })} 
+              />
           </View>
           <View style={formGroupGlobal.group}>
               <Text style={formGroupGlobal.text}>Mật khẩu: </Text>
-              <TextInput secureTextEntry={true} style={formGroupGlobal.input} onChangeText={(v) => setFormData({...formData, password: v})}></TextInput>
+              <TextInput 
+                secureTextEntry={true} 
+                style={formGroupGlobal.input} 
+                onChangeText={(v) => setFormData({ ...formData, password: v })} 
+              />
           </View>
-          <Pressable style={styles.test} onPress={() => handleLogin()}>
+          
+          <Pressable style={styles.test} onPress={handleLogin} disabled={loadding}>
             <View style={formGroupGlobal.button}>
-              <Text  style={styles.button_text}>Đăng nhập</Text>
+              {!loadding ? (
+                <Text style={styles.button_text}>Đăng nhập</Text>
+              ) : (
+                <ActivityIndicator color="white" />
+              )}
             </View>
           </Pressable>
         </View>
-{/*         
-        <View style={formGroupGlobal.hr}></View> */}
+
         <View style={styles.otherLogin}>
-            <Text style={styles.title}>Hoặc đăng nhập với: </Text>
-            <View style={styles.icon}>
-              <EvilIcons name="sc-google-plus" size={40} color="red" />
-            </View>
-          </View>
+          <Text style={styles.title}>Hoặc đăng nhập với: </Text>
+          {/* Bổ sung sự kiện onPress vào nút Google */}
+          <Pressable style={styles.icon} onPress={handleGoogleLogin}>
+            <EvilIcons name="sc-google-plus" size={40} color="red" />
+          </Pressable>
+        </View>
           
-        {/* 4. Cộng thêm insets.bottom vào footer nếu cần tránh vạch điều hướng */}
-        <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
             <Text>Nếu bạn chưa có tài khoản?</Text>
             <Text style={styles.register}> Đăng ký ngay </Text>
         </View>
@@ -139,7 +154,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   test: {
     backgroundColor: primary_color,
-    // borderWidth: 1
     padding: 5,
     borderRadius: 5
   },
@@ -150,16 +164,15 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    // Thay vì dùng row ở gốc làm vỡ giao diện dọc, hãy xếp dọc (mặc định)
     flexDirection: 'column', 
     backgroundColor: '#fff',
-    justifyContent: "center",
+    justifyContent: "space-between", // Tối ưu đẩy footer xuống đáy mượt mà hơn
     alignItems: "center"
   },
   header: {
     width: "100%",
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 20,
     borderRadius: 10,
     overflow: "hidden",
   },
@@ -170,20 +183,16 @@ const styles = StyleSheet.create({
     fontFamily: SF_Pro
   },
   body: {
-    // justifyContent: 'center',
-    // alignItems: 'center',
     width: "90%",
     padding: 20,
-    paddingTop: 40
   },
   otherLogin: {
     alignItems: "center",
-    // gap: , 
-    marginBottom: 30
+    marginBottom: 10
   },
   title: {
     padding: 10,
-    marginBottom: 20,
+    marginBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
@@ -198,10 +207,11 @@ const styles = StyleSheet.create({
   },
   icon: {
     width: 100,
-    padding: 2,
-    boxShadow: "0px 0px 12px 0px #ccc",
-    borderRadius: 2,
-    alignItems: "center"
+    padding: 5,
+    borderRadius: 5,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: '#eee'
   },
   register: {
     fontWeight: "600",

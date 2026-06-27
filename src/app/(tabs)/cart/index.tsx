@@ -7,7 +7,6 @@ import { addCart, getMyCart, updateToCart } from "@/services/CartService";
 import { pushNotifiToStore } from "@/services/NotifyService";
 import { createOrder } from "@/services/OrderService";
 import { updatePublic } from "@/store/features/PublicSlice";
-import { useWS } from "@/store/socket/WebSocketProvider";
 import { toast } from "@/utils/toast";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
@@ -26,7 +25,6 @@ const Cart = () => {
     const [modalDiscountVisible, setModalDiscountVisible] = useState(false);
     const [modalPaymentVisible, setModalPaymentVisible] = useState(false);
     const [modalToppingVisible, setModalToppingVisible] = useState(false);
-    const { connect, disconnect, isConnected } = useWS();
     const dispatch = useDispatch();
     const [dataModel, setDataModal] = useState({});
     const [dataToppingModel, setDataToppingModal] = useState({});
@@ -91,10 +89,6 @@ const Cart = () => {
                 pushNotifiToStore(cart.details[0].product.store.slug, "Có đơn hàng mới");
                 fetchData();
                 dispatch(updatePublic({total_cart: 0}))
-                if(data.data.code){
-                    connect(data.data.code.toString())
-                }
-                
                 if(data.data.type_payment === 'cash'){
                     router.replace('/(tabs)/my-orders');
                 }

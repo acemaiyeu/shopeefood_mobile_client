@@ -1,9 +1,23 @@
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from "@/constants/const";
-import { useLocalSearchParams } from "expo-router";
+import { updatePublic } from "@/store/features/PublicSlice";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useDispatch } from "react-redux";
 const Detail = () => {
     const param: any = useLocalSearchParams();
     const order = JSON.parse(param.order);
+    const router = useRouter();
+    const dispatch = useDispatch();
+    useEffect(() => {
+        if(order){
+        console.log(order.status === "CONFIRMED",order)
+            if(order.status === "CONFIRMED" && order.type_payment === "bank"){
+                dispatch(updatePublic({order}))
+                router.replace('/(tabs)/cart/payment_cart')
+            }
+        }
+    }, [])
     return (
         <ScrollView style={styles.container}>
             {!order.id ? <Text style={styles.container_text}>Giỏ hàng của bạn đang trống!</Text> : 

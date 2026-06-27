@@ -20,31 +20,30 @@ const clearClientAuth = () => {
 };
 
 axiosAuth.interceptors.request.use(
-  (config) => {
-    const token = getItem('access_token');
-    const expiresAt = getItem('expires_at');
-    // 1. KIỂM TRA CHỦ ĐỘNG: Nếu biết chắc token đã hết hạn thì không gửi request nữa
-    if (expiresAt && Date.now() > Number(expiresAt)) {
-      clearClientAuth();
-      
-      // Hủy request để tiết kiệm tài nguyên
-      const controller = new AbortController();
-      config.signal = controller.signal;
-      controller.abort();
+  async (config) => { // 🌟 THÊM async ở đây
+    try {
+      // 🌟 THÊM await ở đây để lấy ra chính xác chuỗi string token
+      const token = await getItem('access_token'); 
+      const expiresAt = await getItem('expires_at');
 
-      toast("Phiên đăng nhập đã hết hạn!", "error");
-      // window.location.href = '/login'; 
-      return config;
+      // Kiểm tra hạn token
+      if (expiresAt && Date.now() > Number(expiresAt)) {
+        // clearClientAuth(); // Hàm xóa auth của bạn
+        const controller = new AbortController();
+        config.signal = controller.signal;
+        controller.abort();
+        // toast("Phiên đăng nhập đã hết hạn!", "error");
+        return config;
+      }
+
+      // Gán token thật (dạng string) vào header
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error("Lỗi đọc SecureStore trong interceptor:", error);
     }
 
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    // Kiểm tra bảo mật domain
-    // if (!config.baseURL.includes('almobe.io.vn') && !config.baseURL.includes('192.168.') && !config.baseURL.includes('localhost')) {
-    //   return Promise.reject(new Error('Cảnh báo: Nguồn không xác thực!'));
-    // }
     return config;
   },
   (error) => Promise.reject(error)
@@ -58,7 +57,15 @@ axiosAuth.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
       const message = data?.message || 'Đã xảy ra lỗi';
-
+      console.log("--- CHI TIẾT LỖI API ---");
+            console.log("Request URL:", `${apiURL}/api/auth` + error.config.url); // Tránh cộng chuỗi nếu apiURL đã có trong cấu hình base
+            const payload = error.config.data ? JSON.parse(error.config.data) : "Không có payload";
+            console.log("Payload (Request Body):", payload);
+            console.log("Request Method:", error.config.method?.toUpperCase());
+            console.log("Status Code:", error.response.status, error.response.statusText);
+            console.log("Request Headers:", error.config.headers);
+            console.log("Response Headers:", error.response.headers);
+            console.log("------------------------");
       switch (status) {
         case 401:
           // Xử lý khi Token hết hạn hoặc không hợp lệ từ phía Server
