@@ -9,6 +9,7 @@ import { Provider, useSelector } from 'react-redux';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
+import WebSocketProvider from '@/store/socket/WebSocketProvider';
 import { store } from '@/store/store';
 
 export default function TabLayout() {
@@ -30,6 +31,7 @@ export default function TabLayout() {
 
   return (
     <Provider store={store}>
+      <WebSocketProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AnimatedSplashOverlay />
         
@@ -55,6 +57,7 @@ export default function TabLayout() {
         {/* Cần đặt Toast ở cuối cùng để nó hiển thị đè lên trên cùng */}
         
       </ThemeProvider>
+      </WebSocketProvider>
     </Provider>
   );
 }

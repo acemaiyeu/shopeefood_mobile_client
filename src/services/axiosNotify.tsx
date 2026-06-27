@@ -1,10 +1,10 @@
-import { apiURL, deleteItem, getItem } from '@/constants/const';
+import { API_URL_NOTIFY, deleteItem, getItem } from '@/constants/const';
 import { toast } from '@/utils/toast';
 import axios from 'axios';
 import { Alert } from 'react-native';
 
-const axiosToken = axios.create({
-  baseURL: `${apiURL}/api/v2/`,
+const axiosNotify = axios.create({
+  baseURL: `${API_URL_NOTIFY}/api/`,
   headers: {
     'Content-Type': 'application/json',
     'X-App-Source': 'almobe-react-client',
@@ -18,7 +18,7 @@ const clearClientAuth = () => {
   deleteItem('expires_at');
   // Nếu có dùng Redux/Slice để lưu profile client, bạn nên dispatch reset ở đây
 };
-axiosToken.interceptors.request.use(
+axiosNotify.interceptors.request.use(
   async (config) => {
     // SỬA LỖI: Thêm await cho cả hai hàm đọc dữ liệu bất đồng bộ
     const token = await getItem('access_token');
@@ -59,13 +59,13 @@ axiosToken.interceptors.request.use(
   }
 );
 
-axiosToken.interceptors.response.use(
+axiosNotify.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
       // 1. Log chi tiết lỗi để debug
       console.log("--- CHI TIẾT LỖI API ---");
-      console.log("Request URL:", `${apiURL}/api/v2` + error.config.url); // Tránh cộng chuỗi nếu apiURL đã có trong cấu hình base
+      console.log("Request URL:", `${API_URL_NOTIFY}/api/` + error.config.url); // Tránh cộng chuỗi nếu apiURL đã có trong cấu hình base
       const payload = error.config.data ? JSON.parse(error.config.data) : "Không có payload";
       console.log("Payload (Request Body):", payload);
       console.log("Request Method:", error.config.method?.toUpperCase());
@@ -113,7 +113,7 @@ axiosToken.interceptors.response.use(
 
 
 
-axiosToken.interceptors.response.use(
+axiosNotify.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response) {
@@ -164,4 +164,4 @@ axiosToken.interceptors.response.use(
   }
 );
 
-export default axiosToken;
+export default axiosNotify;

@@ -12,25 +12,26 @@ interface IMODAL {
   modalVisible: boolean,
   setModalVisible: (v: boolean) => void,
   cart: any,
-  setCart: (param: object) => void
 }
 interface IDISCOUNT {
   id: number,
   type: string,
   code: string
 }
-const DiscountModal = ({ modalVisible, setModalVisible, cart, setCart}: IMODAL) => {
+const DiscountModal = ({ modalVisible, setModalVisible, cart}: IMODAL) => {
     const [param, setParam] = useState<any>({});
     const navigation: any = useNavigation();
     const dispatch = useDispatch();
     const [discounts, setDiscounts] = useState([]);
     const [applyDiscounts, setApplyDiscounts] = useState<IDISCOUNT[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
     const getDataDiscount = async () => {
       const data: any = await getDiscountClientAll(1, 100, {slug: cart.details[0].product.store.slug});
       if(data){
-          setDiscounts(data);
+          setDiscounts(data.data);
       }
     }
+
     const handleClickDiscount = (discount: any) => {
         const check = applyDiscounts.findIndex((i: any) => i.type == discount.type);
         if(check == -1){
@@ -54,10 +55,7 @@ const DiscountModal = ({ modalVisible, setModalVisible, cart, setCart}: IMODAL) 
         
     }
     useEffect(() => {
-        if((discounts?.length === 0 || !discounts) && cart){
           getDataDiscount()
-          
-        }
     },[modalVisible, cart])
 
     const handleApplyDiscount = async (param: any) => {
@@ -66,6 +64,14 @@ const DiscountModal = ({ modalVisible, setModalVisible, cart, setCart}: IMODAL) 
           dispatch(updatePublic({refresh_cart: true}))
           setModalVisible(false)
     }
+    const fetchData = async () => {
+        setRefreshing(true);
+        // Fetch your updated API data here
+            await getDataDiscount()
+        // setData(newData);
+        setRefreshing(false);
+    };
+
     return (
         <Modal isVisible={modalVisible} onBackdropPress={() => setModalVisible(false)} style={styles.container}>
             <View style={styles.box}>

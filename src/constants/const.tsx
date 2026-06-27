@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { StyleSheet } from "react-native";
 export const apiURL = "http://192.168.31.81:8000"
+export const API_URL_NOTIFY = "http://192.168.31.81:8001"
 export const primary_color = "#f7175a"
 export const SF_Pro = "SF_Pro";
 export const SF_Pro_DISPLAY_BOLD = "SF_Pro_DISPLAY_BOLD";

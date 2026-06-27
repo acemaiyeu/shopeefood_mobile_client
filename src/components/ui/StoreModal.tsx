@@ -43,7 +43,7 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
   const addToCart = async () => {
     const data: any = await addCart({...dataAddCart, toppings: toppingChoose});
     if(data){
-        dispatch(updatePublic({total_cart: data.total_cart, refresh_cart: true}))
+        dispatch(updatePublic({total_cart: data.data.total_cart, refresh_cart: true}))
         toast("Thêm giỏ hàng thành công!")
         setModalVisible(false)
     }

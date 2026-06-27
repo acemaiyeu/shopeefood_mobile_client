@@ -1,7 +1,7 @@
 import { getItem } from '@/constants/const';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, RefreshControl, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, RefreshControl, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { useSelector } from 'react-redux';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -19,7 +19,6 @@ export default function SplashScreen() {
         getItem('access_token'),
         delay(2000)
       ]);
-      alert(token)
       if (!isMounted.current) return;
 
       if (token) {
@@ -52,7 +51,6 @@ export default function SplashScreen() {
     };
   }, [login, checkAuthAndNavigate]);
   useEffect(() => {
-    Alert.alert(login)
   },[login])
 
   return (

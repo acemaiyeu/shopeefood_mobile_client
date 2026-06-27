@@ -16,7 +16,6 @@ export const getMyCart = async () => {
 
 export const addCart = async (params: object) => {
     try {
-        console.log("params",params)
         const res = await axiosToken.post('/add-to-cart', params);
         return res; // Return the actual data
     } catch (e) {

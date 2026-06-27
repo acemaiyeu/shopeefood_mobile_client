@@ -27,6 +27,7 @@
 //   );
 // }
 
+import SoundNotify from '@/components/ui/SoundNotify';
 import { store } from '@/store/store';
 import { Stack } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -35,11 +36,13 @@ import { Provider } from 'react-redux';
 export default function RootLayout() {
   return (
     <Provider store={store}>
+       
         <Stack screenOptions={{ headerShown: false }}>
         {/* File index ngoài cùng sẽ mặc định chạy trước */}
         <Stack.Screen name="index" /> 
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <SoundNotify />
         </Stack>
         <Toast /> 
     </Provider>

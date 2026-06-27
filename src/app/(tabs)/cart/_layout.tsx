@@ -6,7 +6,7 @@ export default function HomeLayout() {
       {/* Màn hình danh sách đơn */}
       <Stack.Screen name="index" options={{ title: 'Giỏ hàng' }} />
       <Stack.Screen name="discount_condition" options={{ title: 'Điều kiện Mã giảm giá' }} />
-      .tsx
+      <Stack.Screen name="payment_cart" options={{header: () => null}} />
     </Stack>
   );
 }

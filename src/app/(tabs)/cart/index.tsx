@@ -4,29 +4,36 @@ import QtyProductCartModal from "@/components/ui/QtyProductCartModal";
 import QtyProductToppingCartModal from "@/components/ui/QtyProductToppingCartModal";
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from "@/constants/const";
 import { addCart, getMyCart, updateToCart } from "@/services/CartService";
+import { pushNotifiToStore } from "@/services/NotifyService";
+import { createOrder } from "@/services/OrderService";
 import { updatePublic } from "@/store/features/PublicSlice";
+import { useWS } from "@/store/socket/WebSocketProvider";
+import { toast } from "@/utils/toast";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import Feather from '@expo/vector-icons/Feather';
+import { router, useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 const Cart = () => {
-    const {total_cart, refresh_cart} = useSelector((state: any) => state.public)
+    const {refresh_cart} = useSelector((state: any) => state.public)
     const [cart, setCart] = useState<any>({});
+    const navigation: any = useNavigation();
     const [refreshing, setRefreshing] = useState(false);
     const timeoutSearch: any = useRef(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [modalDiscountVisible, setModalDiscountVisible] = useState(false);
     const [modalPaymentVisible, setModalPaymentVisible] = useState(false);
     const [modalToppingVisible, setModalToppingVisible] = useState(false);
+    const { connect, disconnect, isConnected } = useWS();
     const dispatch = useDispatch();
     const [dataModel, setDataModal] = useState({});
     const [dataToppingModel, setDataToppingModal] = useState({});
     const getCart = async() => {
         const data: any = await getMyCart();
         if(data){
-            setCart({...data})
+            setCart({...data.data})
         }
     }
 
@@ -74,16 +81,37 @@ const Cart = () => {
             setModalPaymentVisible(false)
         }
     }
+
+    const handleCreateOrder = async () => {
+        console.log("👉 HÀM HANDLE_CREATE_ORDER VỪA BỊ KÍCH HOẠT!");
+        const data: any = await createOrder();
+            if(data){
+                toast("Đặt hàng thành công!")
+                dispatch(updatePublic({refest_order: true, order: data.data}))
+                pushNotifiToStore(cart.details[0].product.store.slug, "Có đơn hàng mới");
+                fetchData();
+                dispatch(updatePublic({total_cart: 0}))
+                if(data.data.code){
+                    connect(data.data.code.toString())
+                }
+                
+                if(data.data.type_payment === 'cash'){
+                    router.replace('/(tabs)/my-orders');
+                }
+                if(data.data.type_payment === 'bank'){
+                    navigation.navigate("payment_cart")
+                }
+                
+            }
+    }
     return (
         <ScrollView style={styles.container} refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
-      }>
-            
-            
+      }>            
             {!cart.id ? <Text style={styles.container_text}>Giỏ hàng của bạn đang trống!</Text> : 
             <>
                 <QtyProductCartModal modalVisible={modalVisible} setModalVisible={setModalVisible} data={dataModel}  setQty={handleAddToCart} />
-                <DiscountModal modalVisible={modalDiscountVisible} setModalVisible={setModalDiscountVisible} cart={cart} setCart={updateCart} />
+                <DiscountModal modalVisible={modalDiscountVisible} setModalVisible={setModalDiscountVisible} cart={cart}/>
                 <PaymentCartModal modalVisible={modalPaymentVisible} setModalVisible={setModalPaymentVisible} cart={cart} updateCart={updateCart} />
                 <QtyProductToppingCartModal modalVisible={modalToppingVisible} setModalVisible={setModalToppingVisible} data={dataToppingModel} addToCart={handleAddToCart}/>
                 <View style={styles.box}>    
@@ -191,8 +219,9 @@ const Cart = () => {
                 </View>
             </View>
 
-            <Pressable style={styles.payment} onPress={() => setModalVisible(true)}> 
+            <Pressable style={styles.payment} onPress={() => handleCreateOrder()}> 
                     <Text style={styles.payment_text}>Đặt hàng</Text> 
+                    <Text style={styles.payment_text} onPress={() => handleNotify()}>test</Text> 
             </Pressable>
             </>}
         </ScrollView>
