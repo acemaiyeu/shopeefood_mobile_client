@@ -105,6 +105,7 @@ export default function HomeScreen() {
           profile: response.data, 
           total_cart: response.data.total_cart 
         }));
+        console.log("uid", response.data.uid)
         connect(response.data.uid);
       }
     } catch (error) {

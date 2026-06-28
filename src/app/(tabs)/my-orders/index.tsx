@@ -10,11 +10,13 @@ import no_thumbnail from '../../../../assets/images/no-thumbnail.jpg';
 
 export default function OrderListScreen() { // Bắt buộc phải có 'default'
   const [orders, setOrders] = useState<any>([]);
-  const [params, setParams] = useState<any>([]);
+  const [params, setParams] = useState<any>({
+    curent_page: 1
+  });
   const navigation: any = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
   const getOrders = async () => {
-    const data: any = await getMyOrders(params.curent_page, 9)
+    const data: any = await getMyOrders(params?.pagination?.current_page ?? 1, 9)
     if(data) {
       setOrders(data.data);
       setParams({...data.meta})
@@ -22,7 +24,7 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
   }
   useEffect(() => {
     getOrders()
-  }, [params.curent_page])
+  }, [params?.pagination?.current_page])
 
       const fetchData = async () => {
         setRefreshing(true);
@@ -31,7 +33,6 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
         // setData(newData);
         setRefreshing(false);
     };
-
 
   return (
     <ScrollView style={styles.container}  refreshControl={
@@ -72,9 +73,14 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
           </> : <View><Text>Không có đơn hàng nào</Text></View>}
           <View style={styles.pages}>
               <View style={styles.page_box}>
-                  <MaterialCommunityIcons name="skip-previous-circle-outline" size={30} color={primary_color} />
-                  <Text style={styles.page_text}>1</Text>
-                  <MaterialCommunityIcons name="skip-next-circle-outline" size={30} color={primary_color} />
+                  {!params.pagination || params?.pagination?.current_page === 1 ?
+                  <MaterialCommunityIcons name="skip-previous-circle-outline" size={30} color="gray"/> :
+                    <MaterialCommunityIcons name="skip-previous-circle-outline" size={30} color={primary_color} onPress={() => {if((params.pagination.current_page ?? 1) === 1) {return}; setParams({pagination: {...params.pagination, current_page: params.pagination.current_page - 1}})}}/>
+                  }
+                  <Text style={styles.page_text}>{params?.pagination?.current_page ?? 1}</Text>
+                  {!params.pagination || (params?.pagination.current_page === (params?.pagination?.total_pages??1)) ?
+                  <MaterialCommunityIcons name="skip-next-circle-outline" size={30} color="gray" />
+                  : <MaterialCommunityIcons onPress={() => setParams({pagination: {...params.pagination, current_page: params.pagination.current_page + 1}})} name="skip-next-circle-outline" size={30} color={primary_color} />}
               </View>
           </View>
     </ScrollView>

@@ -1,7 +1,7 @@
 import { getItem } from '@/constants/const';
 import { useAudioPlayer } from 'expo-audio';
 import React, { createContext, useContext, useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { updatePublic } from '../features/PublicSlice';
 
 // Cấu hình các URL hệ thống của bạn
@@ -21,6 +21,7 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 export default function WebSocketProvider({ children }: { children: React.ReactNode }) {
 const player = useAudioPlayer(require('../../../assets/audio/notifi.mp3'));
   const ws = useRef<WebSocket | null>(null);
+  const {total_notification} = useSelector((state: any) => state.public)
   const heartbeatTimer = useRef<any>(null); // Bộ đếm thời gian gửi Ping giữ kết nối
   const [isConnected, setIsConnected] = useState(false);
   const [currentChannel, setCurrentChannel] = useState<string | number | null>(null);
@@ -35,7 +36,7 @@ const player = useAudioPlayer(require('../../../assets/audio/notifi.mp3'));
     // Tên channel theo chuẩn Private của Laravel (Ví dụ: private-notify.5256740001846)
     const channelName = `private-notify.${channelId}`;
     const PUSHER_APP_KEY = 'foodkey'; // Key của Pusher/Laravel WebSockets cấu hình ở .env backend
-    const fullUrl = `${BASE_WS_URL}/app/foodkey?protocol=7&client=js&flash=false`;
+    const fullUrl = `${BASE_WS_URL}/app/${PUSHER_APP_KEY}?protocol=7&client=js&flash=false`;
 
     console.log('📡 Giai đoạn 1: Khởi tạo kết nối WebSocket trước...');
     ws.current = new WebSocket(fullUrl);
@@ -140,13 +141,19 @@ const player = useAudioPlayer(require('../../../assets/audio/notifi.mp3'));
         const eventData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
         console.log('🔥 [THÀNH CÔNG RỰC RỠ] ĐÃ NHẬN ĐƯỢC DATA REALTIME:', eventData.data, eventData.data.order);
-        player.seekTo(0); // tua về đầu nếu muốn
-        player.play();
+        if (player.isLoaded) {
+            player.seekTo(0); // Tua chuông về giây đầu tiên
+            player.play();    // Phát nhạc ngay lập tức
+        } else {
+            // Trường hợp file mp3 chưa load kịp, cố gắng kích hoạt play ngầm
+            player.play();
+        }
+
         if(eventData.data.order){
            dispatch(updatePublic({order: eventData.data.order}))
         }
         if(eventData.data.notification){
-           dispatch(updatePublic({notification: eventData.data.notification}))
+           dispatch(updatePublic({notification: eventData.data.notification, total_notification: total_notification + 1}))
         }
        
         

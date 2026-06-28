@@ -14,7 +14,7 @@ import { store } from '@/store/store';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const {total_cart} = useSelector((state: any) => state.public)
+  const {total_cart, total_notification} = useSelector((state: any) => state.public)
   const [loaded, error] = useFonts({
     [SF_Pro]: require('../../../assets/fonts/SF-Pro.ttf'),
     [SF_Pro_DISPLAY_BOLD]: require('../../../assets/fonts/SF-Pro-Display-Bold.otf'),
@@ -51,6 +51,10 @@ export default function TabLayout() {
               }} 
             />
           <Tabs.Screen name="my-orders" options={{ title: 'Đơn hàng', tabBarIcon: ({ color }) => <Ionicons name="list" size={24} color={color} /> }} />
+          <Tabs.Screen name="notifications" options={{ title: 'Thông báo', tabBarIcon: ({ color }) => <Ionicons name="notifications" size={24} color={color} />,
+                tabBarBadge: total_notification > 0 ? total_notification : undefined, // Ẩn badge nếu giỏ hàng trống
+                tabBarBadgeStyle: { backgroundColor: 'red', color: 'white' } // Tùy chỉnh màu sắc nếu muốn
+                }} />
           <Tabs.Screen name="accounts" options={{ title: 'Cá nhân', tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} /> }} />
         </Tabs>
 

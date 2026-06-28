@@ -1,9 +1,8 @@
-import { primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from "@/constants/const";
-import * as Sharing from 'expo-sharing';
-import { useRef, useState } from "react";
+import QRCodeCountdown from "@/components/ui/QRCodeCountdown";
+import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from "@/constants/const";
+
+import { useEffect, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import QRCode from 'react-native-qrcode-svg';
-import ViewShot from 'react-native-view-shot';
 import { useSelector } from "react-redux";
 const paymentCart = () => {
     const [refreshing, setRefreshing] = useState(false);
@@ -15,15 +14,10 @@ const paymentCart = () => {
         // setData(newData);
         setRefreshing(false);
     };
-    const viewShotRef = useRef<any>(null);
     
-
-        const saveQR = async () => {
-        const uri = await viewShotRef.current.capture();
-
-        await Sharing.shareAsync(uri);
-        };
-        
+        useEffect(() => {
+            console.log("order", order)
+        }, [order])
     return (
         <ScrollView style={styles.container} refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
@@ -60,24 +54,14 @@ const paymentCart = () => {
                     </View>
                      {order.status === "CONFIRMED" && 
                      <>
-                     <View style={styles.box_item}>
-                                <View style={styles.qr_box}>
-                                    <ViewShot  ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
-                                        <QRCode
-                                            value={order.qr}
-                                            size={220}
-                                        />
-                                    </ViewShot>
-                                    <Text style={styles.download} onPress={() => saveQR()}>Tải về</Text>
-                                    </View>
-                     </View>
+                     {order.expired_qr && <QRCodeCountdown expiredAt={order.expired_qr} qr={order.qr}/>}
                       <View style={styles.box_item}>
                             <Text style={styles.box_item_text}>Người thụ hưởng: </Text>
                             <Text style={styles.box_item_value}>{order.store_name ?? "Mặc định"}</Text>
                     </View>
                      <View style={styles.box_item}>
                             <Text style={styles.box_item_text}>Giá trị cần thanh toán: </Text>
-                            <Text style={styles.box_item_value}>{order.grand_total ?? "Mặc định"}</Text>
+                            <Text style={styles.box_item_value}>{formatMoney(order.grand_total??0)}</Text>
                     </View>
                     </>
                      }
@@ -125,17 +109,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontStyle: 'italic',
     },
-    qr_box: {
-        padding: 10,
-        borderRadius: 5,
-        borderWidth: 1,
-        borderColor: "#ccc"
-    },
-    download: {
-        backgroundColor: 'transparent',
-        textAlign: 'center',
-        color: primary_color,
-        paddingTop: 15
-    }
+    
 })
 export default paymentCart;    

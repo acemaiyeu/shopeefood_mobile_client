@@ -11,7 +11,8 @@ const PublicSlice = createSlice({
     order: {},
     notification: {},
     audio_notification: false,
-    profile: {}
+    profile: {},
+    total_notification: 0
    },
   reducers: {
     updatePublic: (state, action) => {
@@ -23,6 +24,7 @@ const PublicSlice = createSlice({
       state.notification = action.payload.notification??state.notification;
       state.audio_notification = (action.payload.audio_notification === true || action.payload.audio_notification === false) ? action.payload.audio_notification : state.audio_notification;
       state.profile = action.payload.profile ?? state.profile;
+      state.total_notification = action.payload.total_notification ?? state.total_notification;
     },
   },
 });
