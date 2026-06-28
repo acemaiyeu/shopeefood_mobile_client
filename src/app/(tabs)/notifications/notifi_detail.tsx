@@ -13,7 +13,7 @@ const DetailScreen = () => {
                                 <Pressable style={styles.item_notification}>
                                     <View style={styles.info_notification}>
                                         <View style={styles.info_notification_box}>
-                                            <View style={styles.info_notification_title}>{notification.title}
+                                            <View style={styles.info_notification_title}>
                                                 <Text style={styles.info_notification_title_text}>{notification.title}</Text>
                                             </View>
                                             <Text style={styles.info_notification_content}>- {notification.content}</Text>

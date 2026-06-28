@@ -1,5 +1,4 @@
 import { getItem } from '@/constants/const';
-import { useAudioPlayer } from 'expo-audio';
 import React, { createContext, useContext, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePublic } from '../features/PublicSlice';
@@ -19,7 +18,7 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export default function WebSocketProvider({ children }: { children: React.ReactNode }) {
-const player = useAudioPlayer(require('../../../assets/audio/notifi.mp3'));
+// const player = useAudioPlayer(require('../../../assets/audio/notifi.mp3'));
   const ws = useRef<WebSocket | null>(null);
   const {total_notification} = useSelector((state: any) => state.public)
   const heartbeatTimer = useRef<any>(null); // Bộ đếm thời gian gửi Ping giữ kết nối
@@ -141,13 +140,6 @@ const player = useAudioPlayer(require('../../../assets/audio/notifi.mp3'));
         const eventData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
         console.log('🔥 [THÀNH CÔNG RỰC RỠ] ĐÃ NHẬN ĐƯỢC DATA REALTIME:', eventData.data, eventData.data.order);
-        if (player.isLoaded) {
-            player.seekTo(0); // Tua chuông về giây đầu tiên
-            player.play();    // Phát nhạc ngay lập tức
-        } else {
-            // Trường hợp file mp3 chưa load kịp, cố gắng kích hoạt play ngầm
-            player.play();
-        }
 
         if(eventData.data.order){
            dispatch(updatePublic({order: eventData.data.order}))
