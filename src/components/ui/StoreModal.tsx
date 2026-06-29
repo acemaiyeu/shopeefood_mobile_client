@@ -83,9 +83,10 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
                         if(topping.details && topping.details.length > 0){
                             return (
                               <View key={topping.id}>
-                                  <Text style={styles.topping_header}>
-                                      {topping.name}:
-                                  </Text>
+                                  <View style={styles.topping_header}>
+                                    <Text style={styles.topping_header_text}>{topping.name}</Text>
+                                    <Text style={styles.topping_header_value}>(Chọn {topping.choose}):</Text>
+                                  </View>
                                   <ScrollView style={styles.list_topping}>
                                       {topping.details.map((detail: any) => {
                                           return (
@@ -94,16 +95,23 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
                                                 {toppingChoose.findIndex((i: any) => i.id === detail.id) >= 0 ? 
                                                 <Fontisto name="checkbox-active" size={24} color={primary_color} 
                                                 onPress={() => {
-                                                  const check_exists = toppingChoose.findIndex((i: any) => i.id === detail.id);
-                                                    if(check_exists >= 0){
-                                                      const new_toppings = toppingChoose.filter((item) => item.id !== detail.id);
-                                                      setToppingChoose(new_toppings)
-                                                    }
+                                                  
+                                                    const check_exists = toppingChoose.findIndex((i: any) => i.id === detail.id);
+                                                      if(check_exists >= 0){
+                                                        const new_toppings = toppingChoose.filter((item) => item.id !== detail.id);
+                                                        setToppingChoose(new_toppings)
+                                                      }
                                                 }}/>  :
 
                                                 <Fontisto name="checkbox-passive" size={24} color={primary_color} onPress={() => {
                                                     const check_exists = toppingChoose.findIndex((i: any) => i.id === detail.id);
-                                                    if(check_exists === -1){
+                                                    let check_exists_choose = 0;
+                                                    toppingChoose.map((i) => {
+                                                      if(topping.details.some((d: any) => d.product_id === i.product_id)){
+                                                          check_exists_choose += 1
+                                                      }
+                                                    })
+                                                    if(check_exists === -1 &&  check_exists_choose < topping.choose){
                                                       const ob = {
                                                         id: detail.id,
                                                         product_id: detail.product.id,
@@ -237,7 +245,20 @@ const styles = StyleSheet.create({
   topping_header: {
     fontSize: 20,
     fontWeight: "600",
-    fontFamily: SF_Pro
+    fontFamily: SF_Pro,
+    flexDirection: 'row',
+    gap: 5,
+    alignContent: 'center'
+  },
+  topping_header_text: {
+      fontFamily: SF_Pro,
+      fontSize: 15
+  },
+  topping_header_value: {
+      fontFamily: SF_Pro,
+      fontSize: 12,
+      marginTop: 4,
+      color: primary_color
   },
   topping_container: {
     maxHeight: 400

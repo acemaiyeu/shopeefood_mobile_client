@@ -190,7 +190,7 @@ const Cart = () => {
             <View style={styles.box}> 
                 <View style={styles.box_item_input}>
                         <Text style={styles.box_item_text}>Ghi chú: </Text>
-                        <TextInput style={styles.box_item_input_value} />
+                        <TextInput style={styles.box_item_input_value} value={cart.notes} onChange={(v) => setCart({...cart, notes: v})}/>
                         
                 </View>
             </View>
@@ -215,7 +215,6 @@ const Cart = () => {
 
             <Pressable style={styles.payment} onPress={() => handleCreateOrder()}> 
                     <Text style={styles.payment_text}>Đặt hàng</Text> 
-                    <Text style={styles.payment_text} onPress={() => handleNotify()}>test</Text> 
             </Pressable>
             </>}
         </ScrollView>

@@ -82,7 +82,7 @@ const DiscountModal = ({ modalVisible, setModalVisible, cart}: IMODAL) => {
                 <View style={styles.body}>
                       {discounts && discounts.length > 0 && discounts.map((discount: any, discount_index: number) => {
                         return (
-                          <Pressable style={[styles.discount_item, discount_index === discount.length - 1 && styles.discount_item_last , (discount.is_apply === false) && styles.none_apply]} onPress={() => handleClickDiscount(discount)}>
+                          <Pressable style={[styles.discount_item, discount_index === discount.length - 1 && styles.discount_item_last , (discount.is_apply === false) && styles.none_apply]} onPress={() => handleClickDiscount(discount)} key={discount.id}>
                             <View style={[styles.thumbnail, discount.type === 'product' ? styles.food : styles.ship]}>
                               <Text style={styles.thumbnail_text}>{discount.type === 'product' ? 'ĐỒ ĂN' : 'VẬN CHUYỂN'}</Text>
                             </View>

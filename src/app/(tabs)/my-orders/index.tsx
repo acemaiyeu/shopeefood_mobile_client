@@ -5,6 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSelector } from 'react-redux';
 import no_thumbnail from '../../../../assets/images/no-thumbnail.jpg';
 
 
@@ -13,6 +14,7 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
   const [params, setParams] = useState<any>({
     curent_page: 1
   });
+  const {order} = useSelector((state: any) => state.public)
   const navigation: any = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
   const getOrders = async () => {
@@ -24,7 +26,7 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
   }
   useEffect(() => {
     getOrders()
-  }, [params?.pagination?.current_page])
+  }, [params?.pagination?.current_page,order])
 
       const fetchData = async () => {
         setRefreshing(true);
