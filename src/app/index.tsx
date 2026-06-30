@@ -22,7 +22,7 @@ export default function SplashScreen() {
       if (!isMounted.current) return;
 
       if (token) {
-        router.replace('/(tabs)/homes');
+        router.replace('/(tabs)/homes/home');
       } else {
         router.replace('/(auth)/login');
       }

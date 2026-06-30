@@ -3,11 +3,13 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Tabs, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react'; // Cần thêm useEffect
-import { useColorScheme } from 'react-native';
+import { StatusBar, useColorScheme } from 'react-native';
 import { Provider, useSelector } from 'react-redux';
 // Thay đổi import toast ở đây
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import DynamicHome from '@/components/ui/DynamicIsland';
+import SoundNotify from '@/components/ui/SoundNotify';
 import { primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import WebSocketProvider from '@/store/socket/WebSocketProvider';
 import { store } from '@/store/store';
@@ -32,7 +34,9 @@ export default function TabLayout() {
   return (
     <Provider store={store}>
       <WebSocketProvider>
+      <StatusBar hidden={true} />
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        
         <AnimatedSplashOverlay />
         
         <Tabs screenOptions={{ 
@@ -40,6 +44,7 @@ export default function TabLayout() {
           tabBarInactiveTintColor: '#999',
           headerShown: false,
         }}>
+          
           <Tabs.Screen name="homes" options={{ title: 'Trang chủ', tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} /> }} />
           <Tabs.Screen 
               name="cart" 
@@ -59,7 +64,8 @@ export default function TabLayout() {
         </Tabs>
 
         {/* Cần đặt Toast ở cuối cùng để nó hiển thị đè lên trên cùng */}
-        
+        <DynamicHome />
+        <SoundNotify />
       </ThemeProvider>
       </WebSocketProvider>
     </Provider>

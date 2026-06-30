@@ -20,7 +20,7 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 export default function WebSocketProvider({ children }: { children: React.ReactNode }) {
 // const player = useAudioPlayer(require('../../../assets/audio/notifi.mp3'));
   const ws = useRef<WebSocket | null>(null);
-  const {total_notification} = useSelector((state: any) => state.public)
+  const {total_notification: total_noti} = useSelector((state: any) => state.public)
   const heartbeatTimer = useRef<any>(null); // Bộ đếm thời gian gửi Ping giữ kết nối
   const [isConnected, setIsConnected] = useState(false);
   const [currentChannel, setCurrentChannel] = useState<string | number | null>(null);
@@ -145,7 +145,7 @@ export default function WebSocketProvider({ children }: { children: React.ReactN
            dispatch(updatePublic({order: eventData.data.order}))
         }
         if(eventData.data.notification){
-           dispatch(updatePublic({notification: eventData.data.notification, total_notification: total_notification + 1}))
+           dispatch(updatePublic({notification: eventData.data.notification, total_notification: total_noti + 1}))
         }
        
         
