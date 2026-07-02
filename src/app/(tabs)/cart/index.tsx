@@ -82,7 +82,7 @@ const Cart = () => {
 
     const handleCreateOrder = async () => {
         console.log("👉 HÀM HANDLE_CREATE_ORDER VỪA BỊ KÍCH HOẠT!");
-        const data: any = await createOrder();
+        const data: any = await createOrder({notes: cart.notes});
             if(data){
                 toast("Đặt hàng thành công!")
                 dispatch(updatePublic({refest_order: true, order: data.data}))
@@ -190,7 +190,7 @@ const Cart = () => {
             <View style={styles.box}> 
                 <View style={styles.box_item_input}>
                         <Text style={styles.box_item_text}>Ghi chú: </Text>
-                        <TextInput style={styles.box_item_input_value} value={cart.notes} onChange={(v) => setCart({...cart, notes: v})}/>
+                        <TextInput style={styles.box_item_input_value} value={cart.notes} onChangeText={(v) => setCart({...cart, notes: v})}/>
                         
                 </View>
             </View>

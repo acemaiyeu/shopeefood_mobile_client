@@ -13,12 +13,23 @@ export const getMyOrders = async (page = 1, limit = 10) => {
         throw e; // Rethrow to handle in the component/calling function
     }
 };
-export const createOrder = async () => {
+export const createOrder = async (params: object) => {
     try {
-        const res = await axiosToken.post(`/order`);
+        const res = await axiosToken.post(`/order`,{...params});
         return res; // Return the actual data
     } catch (e) {
         console.error('Error fetching create orders:', e);
         throw e; // Rethrow to handle in the component/calling function
     }
 };
+
+export const ratingOrder = async (param: object) => {
+    try {
+        const res = await axiosToken.post(`/rating`, {...param});
+        return res; // Return the actual data
+    } catch (e) {
+        console.error('Error fetching create orders:', e);
+        throw e; // Rethrow to handle in the component/calling function
+    }
+};
+

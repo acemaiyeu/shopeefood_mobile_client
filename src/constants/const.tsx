@@ -27,12 +27,16 @@ export const formGroupGlobal = StyleSheet.create({
         borderTopLeftRadius: 5
     },
     text: {
-        paddingHorizontal: 10
+        paddingHorizontal: 10,
+        fontSize: 12,
+        fontFamily: SF_Pro
     },
     input: {
         // borderColor: "#ccc",
         // borderWidth: 1,
-        flex: 1
+        flex: 1,
+        fontSize: 12,
+        fontFamily: SF_Pro
     },
     hr: {
         width: "100%",
@@ -106,7 +110,6 @@ export const setTokenWithExpiry = async (token_name = 'access_token', token: str
     await setItem(token_name, token)
     await setItem('expiresAt', expiryTime + "")
     const data = await getItem(token_name)
-    console.log("data",data)
 
 }
 export function getValidToken(name_token = "access_token") {

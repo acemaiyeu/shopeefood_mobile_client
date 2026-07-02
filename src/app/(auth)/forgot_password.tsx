@@ -1,11 +1,8 @@
-import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ThemedView } from '@/components/themed-view';
 import { apiURL, formGroupGlobal, primary_color, setTokenWithExpiry, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
-import axiosAuth from '@/services/axiosAuth';
-import { updatePublic } from '@/store/features/PublicSlice';
 import { toast } from '@/utils/toast';
-import EvilIcons from '@expo/vector-icons/EvilIcons';
 import axios from 'axios';
 import { useNavigation, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -13,7 +10,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
 import logo from '../../../assets/images/logo1.png';
 // Import Linking để xử lý mở URL bên ngoài trên điện thoại
-import * as Linking from 'expo-linking';
 
 export default function HomeScreen() {
   const [formData, setFormData] = useState<any>({});
@@ -23,23 +19,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation: any = useNavigation();
 
-  // Hàm lấy thông tin cá nhân
-  const getProfile = async (token: string) => {
-    try {
-      const res = await axios.post(`${apiURL}/api/auth/profile`, {}, {
-        headers: { // Sửa lại đúng cấu trúc trường headers của axios
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      dispatch(updatePublic({
-        profile: res.data, 
-        total_cart: res.data.total_cart
-      }));
-    } catch (e) {
-      console.log("Lỗi khi lấy thông tin profile trong login:", e);
-    }
-  };
 
   // Hàm xử lý Đăng nhập thông thường
   const handleLogin = async () => {
@@ -52,7 +31,6 @@ export default function HomeScreen() {
 
       if (res.data) {
         setTokenWithExpiry('access_token', res.data.access_token, res.data.expires_in);
-        await getProfile(res.data.access_token);
         toast("Đăng nhập thành công!");
         router.replace('/(tabs)/homes/home');
       }
@@ -76,24 +54,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Hàm xử lý Đăng nhập bằng Google
-  const handleGoogleLogin = async () => {
-    try {
-      const response = await axiosAuth.get('/google');
-      
-      if (response.data.url) {
-        // Kiểm tra nếu chạy trên Web thì dùng href, chạy trên App thì dùng Linking của Expo
-        if (Platform.OS === 'web') {
-          window.location.href = response.data.url;
-        } else {
-          await Linking.openURL(response.data.url);
-        }
-      }
-    } catch (error) {
-      console.error('Lỗi lấy link Google:', error);
-      toast("Không thể kết nối dịch vụ Google", "error");
-    }
-  };
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
@@ -103,7 +63,7 @@ export default function HomeScreen() {
 
         <View style={styles.body}>
           <View>
-            <Text style={styles.title}>Đăng nhập tài khoản của bạn: </Text>
+            <Text style={styles.title}>Quên mật khẩu: </Text>
           </View>
           <View style={formGroupGlobal.group}>
               <Text style={formGroupGlobal.text}>Email: </Text>
@@ -114,37 +74,21 @@ export default function HomeScreen() {
                 onChangeText={(v) => setFormData({ ...formData, email: v })} 
               />
           </View>
-          <View style={formGroupGlobal.group}>
-              <Text style={formGroupGlobal.text}>Mật khẩu: </Text>
-              <TextInput 
-                secureTextEntry={true} 
-                style={formGroupGlobal.input} 
-                onChangeText={(v) => setFormData({ ...formData, password: v })} 
-              />
-          </View>
-          <Text style={styles.forgot_password} onPress={() => navigation.navigate("forgot_password")}>Quên mật khẩu?</Text>
+          
           <Pressable style={styles.test} onPress={handleLogin} disabled={loadding}>
             <View style={formGroupGlobal.button}>
               {!loadding ? (
-                <Text style={styles.button_text}>Đăng nhập</Text>
+                <Text style={styles.button_text}>Gửi mật khẩu</Text>
               ) : (
                 <ActivityIndicator color="white" />
               )}
             </View>
           </Pressable>
         </View>
-
-        <View style={styles.otherLogin}>
-          <Text style={styles.title}>Hoặc đăng nhập với: </Text>
-          {/* Bổ sung sự kiện onPress vào nút Google */}
-          <Pressable style={styles.icon} onPress={handleGoogleLogin}>
-            <EvilIcons name="sc-google-plus" size={40} color="red" />
-          </Pressable>
-        </View>
           
         <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
-            <Text>Nếu bạn chưa có tài khoản?</Text>
-            <Text style={styles.register} onPress={() => navigation.navigate("register")}> Đăng ký ngay </Text>
+            <Text>Nếu bạn đã có tài khoản?</Text>
+            <Text style={styles.register} onPress={() => navigation.navigate("login")}> Đăng nhập ngay </Text>
         </View>
     </ThemedView>
   );

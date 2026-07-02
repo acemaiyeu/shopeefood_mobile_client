@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   }
   
 })
-export default function OrderListScreen() { // Bắt buộc phải có 'default'
+export default function LayoutAccountScreen() { // Bắt buộc phải có 'default'
   const navigation: any = useNavigation();
   const router = useRouter();
 
@@ -71,29 +71,24 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
             <View><MaterialIcons name="navigate-next" size={24} color="black" /></View>
         </View>
         </Pressable>
-        <View style={styles.group} >
-            <MaterialIcons name="password" size={24} color="black" />
-            <Text style={styles.text} >Mật khẩu</Text>
-            <View><MaterialIcons name="navigate-next" size={24} color="black" /></View>
-        </View>
-        <View style={styles.group} >
+        <Pressable style={styles.group} onPress={() => navigation.navigate("address")}>
             <Entypo name="address" size={24} color="black" />
-            <Text style={styles.text} >Địa chỉ</Text>
+            <Text style={styles.text} >Địa chỉ của tôi</Text>
             <View><MaterialIcons name="navigate-next" size={24} color="black" /></View>
-        </View>
+        </Pressable>
         <View style={styles.hr}></View>
-        <View style={styles.group} >
+        <Pressable style={styles.group} onPress={() => navigation.navigate("tos")}>
             <Text style={styles.text}>Điều khoản dịch vụ</Text>
             <View><MaterialIcons name="navigate-next" size={24} color="black" /></View>
-        </View>
-        <View style={styles.group} >
+        </Pressable>
+        <Pressable style={styles.group} onPress={() => navigation.navigate("drp")}>
             <Text style={styles.text}>Giải quyết tranh chấp và khiếu nại</Text>
             <View><MaterialIcons name="navigate-next" size={24} color="black" /></View>
-        </View>
-         <View style={styles.group} >
+        </Pressable>
+         <Pressable style={styles.group} onPress={() => navigation.navigate("about")}>
             <Text style={styles.text}>Thông tin về chúng tôi</Text>
             <View><MaterialIcons name="navigate-next" size={24} color="black" /></View>
-        </View>
+        </Pressable>
         <View style={styles.hr}></View>
         <View style={styles.logout}><Text style={styles.logout_text} onPress={() => handleLogout()}>Đăng xuất</Text></View>
         <View style={styles.version}>

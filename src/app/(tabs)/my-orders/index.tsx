@@ -73,7 +73,7 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
             })}
             
           </> : <View><Text>Không có đơn hàng nào</Text></View>}
-          <View style={styles.pages}>
+          {orders && order.length > 0 && <View style={styles.pages}>
               <View style={styles.page_box}>
                   {!params.pagination || params?.pagination?.current_page === 1 ?
                   <MaterialCommunityIcons name="skip-previous-circle-outline" size={30} color="gray"/> :
@@ -84,7 +84,7 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
                   <MaterialCommunityIcons name="skip-next-circle-outline" size={30} color="gray" />
                   : <MaterialCommunityIcons onPress={() => setParams({pagination: {...params.pagination, current_page: params.pagination.current_page + 1}})} name="skip-next-circle-outline" size={30} color={primary_color} />}
               </View>
-          </View>
+          </View>}
     </ScrollView>
   );
 }

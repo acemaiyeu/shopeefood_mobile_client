@@ -55,7 +55,7 @@ export default function TabLayout() {
                 tabBarBadgeStyle: { backgroundColor: 'red', color: 'white' } // Tùy chỉnh màu sắc nếu muốn
               }} 
             />
-          <Tabs.Screen name="my-orders" options={{ title: 'Đơn hàng', tabBarIcon: ({ color }) => <Ionicons name="list" size={24} color={color} /> }} />
+          <Tabs.Screen name="my-orders" options={{ title: 'Đơn hàng', tabBarIcon: ({ color }) => <Ionicons name="receipt" size={24} color={color} /> }} />
           <Tabs.Screen name="notifications" options={{ title: 'Thông báo', tabBarIcon: ({ color }) => <Ionicons name="notifications" size={24} color={color} />,
                 tabBarBadge: total_notification > 0 ? total_notification : undefined, // Ẩn badge nếu giỏ hàng trống
                 tabBarBadgeStyle: { backgroundColor: 'red', color: 'white' } // Tùy chỉnh màu sắc nếu muốn

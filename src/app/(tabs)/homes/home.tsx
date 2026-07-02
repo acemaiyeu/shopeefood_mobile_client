@@ -1,19 +1,21 @@
 import * as Device from 'expo-device';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 // 1. Import hook lấy kích thước vùng an toàn
-import { formatMoney, getItem, primary_color, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
-import { getAllProducts } from '@/services/ProductService';
+import AddressModal from '@/components/ui/AddressModal';
+import { formatMoney, getItem, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
+import { getAllProductHots, getAllProductPromotions, getAllProducts } from '@/services/ProductService';
 import { getProfile } from '@/services/UserService';
 import { updatePublic } from '@/store/features/PublicSlice';
 import { useWS } from '@/store/socket/WebSocketProvider';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import { useNavigation } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
+import no_thumbnail from '../../../../assets/images/no-thumbnail.jpg';
 const CATEGORIES = [
   { id: 1, name: 'Cơm', icon: '🍛' },
   { id: 2, name: 'Trà Sữa', icon: '🧋' },
@@ -50,13 +52,17 @@ export default function HomeScreen() {
   const navigation: any = useNavigation();
   const dispatch = useDispatch();
   const { connect } = useWS();
-
-  const [products, setProducts] = useState([]);
-  const [params, setParams] = useState({});
-  
+  const [modalVisible, setModalVisible] = useState<boolean>(false)
+  const [products, setProducts] = useState<any>([]);
+  const [productPromotions, setProductPromotions] = useState<any>([]);
+  const [productHots, setProductHots] = useState<any>([]);
+  const [params, setParams] = useState<any>({});
+  const [refreshing, setRefreshing] = useState(false);
+  const timeoutSearch: any = useRef(null)
   // Lấy profile từ Redux Store
   const { profile } = useSelector((state: any) => state.public);
-
+  const [isProductMore, setIsProductMore] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState<number>(1)
   // 1. Hàm lấy danh sách sản phẩm
   const getProduct = async () => {
     try {
@@ -70,6 +76,62 @@ export default function HomeScreen() {
     }
   };
 
+  const getProductMore = async () => {
+    try {
+      
+      const rs: any = await getAllProducts({...params,page: currentPage + 1});
+      if (rs?.data) {
+        // Tạo một bản sao của mảng trả về để tránh mutate trực tiếp data gốc
+        const newItems = [...rs.data]; 
+        setCurrentPage(currentPage+1)
+        // Kiểm tra xem có trang sau hay không (Nếu nhận về đủ 11 món)
+        const hasMore = newItems.length > 10;
+
+        if (hasMore) {
+            // CÓ TRANG SAU: Xóa món thứ 11 thừa đi để trang này chỉ còn đúng 10 món sạch
+            newItems.pop();
+            setIsProductMore(true);
+        } else {
+            // HẾT TRANG SAU: Giữ nguyên mảng (vì nó chỉ có từ 0 đến 10 món) và tắt trạng thái load more
+            setIsProductMore(false);
+        }
+
+        // Gộp mảng sạch vào state hiển thị
+        setProducts(prevProducts => [...prevProducts, ...newItems]);
+    }
+    } catch (error) {
+      console.log("Lỗi lấy sản phẩm:", error);
+    }
+  }
+    const getProductPromotions = async () => {
+    try {
+      const rs: any = await getAllProductPromotions();
+      if (rs?.data) {
+        setProductPromotions(rs.data);
+      }
+    } catch (error) {
+      console.log("Lỗi lấy sản phẩm:", error);
+    }
+  };
+  const getProductHots = async () => {
+    try {
+      const rs: any = await getAllProductHots();
+      if (rs?.data) {
+        setProductHots(rs.data);
+      }
+    } catch (error) {
+      console.log("Lỗi lấy sản phẩm:", error);
+    }
+  };
+
+    const fetchData = async () => {
+        setRefreshing(true);
+        // Fetch your updated API data here
+            await getProduct()
+            // await getProductPromotions()
+        // setData(newData);
+        setRefreshing(false);
+    };
   // 2. Hàm xử lý lấy Profile một cách an toàn
   const fetchProfileIfNeeded = async () => {
     // Nếu trong Redux đã có profile id rồi thì không cần lấy lại nữa
@@ -98,8 +160,9 @@ export default function HomeScreen() {
       const response: any = await getProfile();
 
       if (response && response.data) {
-        console.log("Dữ liệu profile tải thành công:", response.data);
-        
+        if(response.data.address_active == ""){
+            setModalVisible(true)
+        }
         // Cập nhật vào Redux và kết nối Socket
         dispatch(updatePublic({ 
           profile: response.data, 
@@ -114,48 +177,169 @@ export default function HomeScreen() {
   };
 
   // 3. Quản lý các hiệu ứng vòng đời component bằng useEffect riêng biệt
-  useEffect(() => {
-    getProduct();
-  }, []);
 
+   
+  const handleSearch = (value: any) => {
+    const newParams = { ...params, product_name: value };
+    setParams(newParams);
+
+    if (timeoutSearch.current) {
+      clearTimeout(timeoutSearch.current);
+    }
+
+    timeoutSearch.current = setTimeout(() => {
+      // Reset về trang 1 khi tìm kiếm từ khóa mới
+      getProduct();
+    }, 1000);
+  };
+    const handleClickCategorySearch = (value: any) => {
+    const newParams = { ...params, type_name: value };
+    setParams(newParams);
+    if (timeoutSearch.current) {
+      clearTimeout(timeoutSearch.current);
+    }
+
+    timeoutSearch.current = setTimeout(() => {
+      // Reset về trang 1 khi tìm kiếm từ khóa mới
+      getProduct();
+    }, 1000);
+  };
+  useEffect(() => {
+      handleClickCategorySearch(params.type_name)
+  },[params.type_name])
+  useEffect(() => {
+    getProductHots()
+    getProduct()
+    getProductPromotions()
+  },[])
   useEffect(() => {
     fetchProfileIfNeeded();
   }, [profile?.id]); // Chạy lại nếu profile.id thay đổi
 
-            
+  const updateParent = async (status: boolean) => {
+    if(status === true){
+      await fetchProfileIfNeeded()
+      await fetchData()
+    }
+  }
+   const calculateDeliveryTime = (distance: any, prepareTime = 15) => {
+    if (!distance || distance <= 0) return prepareTime;
+
+    // Giả định vận tốc trung bình của shipper trong đô thị là 30 km/h
+    // 30 km/h tương đương với 1 km đi hết 2 phút (60 / 30)
+    const MINUTES_PER_KM = 2; 
+    
+    // Thời gian di chuyển ước tính
+    const travelTime = distance * MINUTES_PER_KM;
+    
+    // Thêm thời gian biên (sai số kẹt xe, đèn đỏ, tìm nhà) khoảng 5 phút
+    const bufferTime = 5; 
+
+    // Tổng thời gian = Chuẩn bị + Di chuyển + Sai số
+    const totalMinutes = prepareTime + travelTime + bufferTime;
+
+    // Làm tròn lên số nguyên gần nhất (ví dụ 23.4 phút thành 24 phút)
+    return Math.ceil(totalMinutes);
+};         
   return (
     <ThemedView style={styles.container}>
+      <AddressModal modalVisible={modalVisible} setModalVisible={setModalVisible} address={null} updateParent={updateParent} router='home'/>
      <View style={styles.header}>
         <View style={styles.searchBox}>
             <EvilIcons name="search" size={24} color="black" />
-            <TextInput placeholder='Cơm tấm' style={styles.input}/>
+            <TextInput placeholder='Cơm tấm' style={styles.input} onChangeText={(v) => handleSearch(v)}/>
         </View>
      </View>
      {/*  */}
-     <ScrollView style={styles.body}>
+     <ScrollView style={styles.body} refreshControl={
+             <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
+           }>
         <ScrollView horizontal={true} style={styles.nav}>
         {CATEGORIES.map((ca, ca_ind) => {
-          return ( <Pressable style={styles.category_item} key={ca.id} onPress={() => getProduct()}>
+          return ( <Pressable style={styles.category_item} key={ca.id} onPress={() => setParams({...params, type_name: ca.name})}>
                 <Text style={styles.category_item_icon}>{ca.icon}</Text>
                 <Text style={styles.category_item_text}>{ca.name}</Text>
           </Pressable>)
         })}
      </ScrollView>
-       {products && products.length > 0 ?
-        <>
-          {products.map((product: any) => {{
-            return (
-               <Pressable style={styles.product_item} key={product.id} onPress={() => navigation.navigate(`store`, {store_slug: product.slug, product_id: product.id})}>
+     {productPromotions && productPromotions.length > 0 && <View style={styles.productHot}>
+          <View style={styles.productHotModal}>
+            <Text style={styles.productHotModalText}>Chương trình khuyến mãi</Text>
+          </View>
+                {productPromotions.map((product: any) => {
+                  const thumbnail = product.thumbnail ? { uri: product.thumbnail } : no_thumbnail;
+                  return (
+                    <Pressable style={styles.product_item} key={product.product_nid} onPress={() => navigation.navigate(`store`, {store_slug: product.slug, product_id: product.product_id})}>
                 <Image 
-                    source={{ uri: product.thumbnail }} 
+                    source={thumbnail} 
                     style={{ width: 80, height: 60, borderRadius: 5 }} // Ensure you provide dimensions
                   />
                 <View style={styles.product_info}>
-                    <Text style={styles.product_name}>{product.name}</Text>
+                    <Text style={styles.product_name}>{product.product_name}</Text>
                     <View style={styles.product_detail}>
-                      <Text style={styles.product_detail_text}>{product.distance ?? "1.2km"}</Text>
+                      <Text style={styles.product_detail_text}>{Number(product.distance).toFixed(2)} km</Text>
                       <Text style={styles.product_detail_text}>|</Text>
-                      <Text style={styles.product_detail_text}>30 phút</Text>
+                      <Text style={styles.product_detail_text}>Tối đa: {calculateDeliveryTime(product.distance)} phút</Text>
+                    </View>
+                    <Text style={styles.product_price}>
+                      {formatMoney(product.price)}
+                    </Text>  
+                </View>
+                <Text style={styles.notes}>
+                      {product.promotion_name}
+                    </Text>
+            </Pressable>
+                  )
+                })}
+     </View>}
+      {productHots && productHots.length > 0 &&           
+     <View style={styles.productHot}>
+          <View style={styles.productHotModal}>
+            <Text style={styles.productHotModalText}>Bán chạy</Text>
+          </View>
+                {productHots.map((product: any) => {
+                  const thumbnail = product.thumbnail ? { uri: product.thumbnail } : no_thumbnail;
+                  return (
+                    <Pressable style={styles.product_item} key={product.product_id} onPress={() => navigation.navigate(`store`, {store_slug: product.slug, product_id: product.product_id})}>
+                <Image 
+                    source={thumbnail} 
+                    style={{ width: 80, height: 60, borderRadius: 5 }} // Ensure you provide dimensions
+                  />
+                <View style={styles.product_info}>
+                    <Text style={styles.product_name}>{product.product_name}</Text>
+                    <View style={styles.product_detail}>
+                      <Text style={styles.product_detail_text}>{Number(product.distance).toFixed(2)} km</Text>
+                      <Text style={styles.product_detail_text}>|</Text>
+                      <Text style={styles.product_detail_text}>Tối đa: {calculateDeliveryTime(product.distance)} phút</Text>
+                    </View>
+                    <Text style={styles.product_price}>
+                      {formatMoney(product.price)}
+                    </Text>  
+                </View>
+                <Text style={styles.notes}>
+                      Bán chạy
+                    </Text>
+            </Pressable>
+                  )
+                })}
+     </View>}
+
+       {products && products.length > 0 ?
+        <>
+          {products.map((product: any) => {{
+            const thumbnail = product.thumbnail ? { uri: product.thumbnail } : no_thumbnail;
+            return (
+               <Pressable style={styles.product_item} key={product.product_id} onPress={() => navigation.navigate(`store`, {store_slug: product.slug, product_id: product.product_id})}>
+                <Image 
+                    source={thumbnail} 
+                    style={{ width: 80, height: 60, borderRadius: 5 }} // Ensure you provide dimensions
+                  />
+                <View style={styles.product_info}>
+                    <Text style={styles.product_name}>{product.product_name}</Text>
+                    <View style={styles.product_detail}>
+                      <Text style={styles.product_detail_text}>{Number(product.distance).toFixed(2)} km</Text>
+                      <Text style={styles.product_detail_text}>|</Text>
+                      <Text style={styles.product_detail_text}>Tối đa: {calculateDeliveryTime(product.distance)} phút</Text>
                     </View>
                     <Text style={styles.product_price}>
                       {formatMoney(product.price)}
@@ -167,6 +351,10 @@ export default function HomeScreen() {
             </Pressable>
             )
           }})}
+          {isProductMore && 
+          <View style={styles.more_product}>
+              <Text style={styles.more_product_text} onPress={getProductMore}>Xem thêm</Text>
+          </View> }
         </>
        : <Text>Không tìm thấy sản phẩm</Text>}
      </ScrollView>
@@ -257,11 +445,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   notes: {
-    position: 'absolute', bottom: 10, fontFamily: SF_Pro_DISPLAY_BOLD, color: "#ccc", right: 5
+    position: 'absolute', bottom: 10, fontFamily: SF_Pro, color: "#ccc", right: 5, fontSize: 12
   },
   product_name: {
     flex: 1,
-    fontWeight: "600"
+    fontWeight: "600",
+    fontFamily: SF_Pro_DISPLAY_BOLD
   },
   product_detail: {
     flex: 1,
@@ -270,12 +459,55 @@ const styles = StyleSheet.create({
   },
   product_price: {
     flex: 1,
-    color: primary_color
+    color: primary_color,
+    fontFamily: SF_Pro_DISPLAY_BOLD,
+    marginTop: -5
   },
   product_detail_text: {
-    color: "#818080ea"
+    color: "#818080ea",
+    fontFamily: SF_Pro,
+    marginTop: -5
   },
   input: {
     flex: 1
+  },
+  more_product: {
+    padding: 10,
+    width: "100%",
+    alignItems: 'center'
+  },
+  more_product_text: {
+    color: primary_color,
+    borderWidth: 1,
+    borderRadius: 5,
+    borderColor: primary_color,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginBottom: 10,
+    width: 100,
+    textAlign: "center",
+    fontFamily: SF_Pro_DISPLAY_BOLD
+  },
+  productHot: {
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    position: 'relative',
+    backgroundColor: primary_color,
+    marginVertical: 10
+  },
+  productHotModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    backgroundColor: "white",
+    width: "50%",
+    height: 20,
+    borderBottomRightRadius: 999
+  },
+  productHotModalText: {
+    fontFamily: SF_Pro_DISPLAY_BOLD,
+    fontSize: 10,
+    color: primary_color,
+    paddingLeft: 10
   }
 });

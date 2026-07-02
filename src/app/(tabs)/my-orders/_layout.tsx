@@ -7,6 +7,7 @@ export default function OrdersLayout() {
       <Stack.Screen name="index" options={{ title: 'Đơn hàng của tôi' }} />
       {/* Màn hình chi tiết đơn */}
       <Stack.Screen name="detail" options={{ title: 'Chi tiết đơn hàng'}} />
+      <Stack.Screen name="rating_order" options={{ title: 'Đánh giá đơn hàng'}} />
     </Stack>
   );
 }

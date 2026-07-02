@@ -1,6 +1,7 @@
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from "@/constants/const";
 import { updatePublic } from "@/store/features/PublicSlice";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useDispatch } from "react-redux";
@@ -9,15 +10,48 @@ const Detail = () => {
     const order = JSON.parse(param.order);
     const router = useRouter();
     const dispatch = useDispatch();
+    const navigation: any = useNavigation();
     useEffect(() => {
         if(order){
-        console.log(order.status === "CONFIRMED",order)
             if(order.status === "CONFIRMED" && order.type_payment === "bank"){
                 dispatch(updatePublic({order}))
                 router.replace('/(tabs)/cart/payment_cart')
             }
         }
     }, [])
+const checkRatingStatus = (dateRatingStr: string) => {
+    if (!dateRatingStr) return { canRating: false, message: "Không tìm thấy thời hạn đánh giá", result: false};
+
+    // Thay khoảng trắng bằng 'T' và cộng thêm múi giờ +07:00 của Việt Nam
+    const formattedStr = dateRatingStr.replace(' ', 'T') + "+07:00";
+
+    const deadlineDate = new Date(formattedStr);
+    const nowDate = new Date();
+
+    console.log("Now TS:", nowDate.getTime(), " | Deadline TS:", deadlineDate.getTime());
+    // Giờ đây nowDate luôn là THỜI GIAN THỰC TẠI của thiết bị, 
+    // và deadlineDate đã được neo đúng theo múi giờ +07.
+
+    if (nowDate.getTime() < deadlineDate.getTime()) {
+        const diffMs = deadlineDate.getTime() - nowDate.getTime();
+        const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutesLeft = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        return {
+            canRating: true,
+            message: `Còn ${hoursLeft} giờ ${minutesLeft} phút để đánh giá`,
+            result: true
+        };
+    } else {
+        return {
+            canRating: false,
+            message: "Đã hết hạn đánh giá đơn hàng này!",
+            result: false
+        };
+    }
+};
+// --- CÁCH SỬ DỤNG TRONG COMPONENT ---
+
     return (
         <ScrollView style={styles.container}>
             {!order.id ? <Text style={styles.container_text}>Giỏ hàng của bạn đang trống!</Text> : 
@@ -43,7 +77,34 @@ const Detail = () => {
                                                 ]
                                                 }>{order.status_text}</Text>
                     </View>
-                </View>    
+                </View>  
+                 <View style={styles.box}>
+                    <Text style={styles.info_item_title}>Thông tin khách hàng</Text>
+                    <View style={styles.info_item}>
+                        <Text style={styles.info_item_text}>Tên khách hàng:</Text>
+                        <Text style={styles.info_item_value}>{order.user_name}</Text>
+                    </View>
+                    <View style={styles.info_item}>
+                        <Text style={styles.info_item_text}>SĐT:</Text>
+                        <Text style={styles.info_item_value}>{order.user_phone}</Text>
+                    </View>
+                    <View style={styles.info_item}>
+                        <Text style={styles.info_item_text}>Địa chỉ:</Text>
+                        <Text style={styles.info_item_value} numberOfLines={2}>{order.address}</Text>
+                    </View>
+                </View>  
+                {order.status !== "COMPLETED" && order.status !== "CANCELLED" && order.status !== "SHIPPED" && 
+                <View style={styles.box}>
+                    <Text style={styles.info_item_title}>Thông tin người giao hàng</Text>
+                    <View style={styles.info_item}>
+                        <Text style={styles.info_item_text}>Tên người giao hàng:</Text>
+                        <Text style={styles.info_item_value}>{order.shipper_name}</Text>
+                    </View>
+                    <View style={styles.info_item}>
+                        <Text style={styles.info_item_text}>SĐT:</Text>
+                        <Text style={styles.info_item_value}>{order.shipper_phone}</Text>
+                    </View>
+                </View>  }
                 <View style={styles.box}>    
                     {order.details && order.details.length > 0 && order.details.map((detail: any, detail_index: number) => {
                         return(
@@ -99,7 +160,7 @@ const Detail = () => {
             <View style={styles.box}> 
                 <View style={styles.box_item_input}>
                         <Text style={styles.box_item_text}>Ghi chú: </Text>
-                        <TextInput style={styles.box_item_input_value} />
+                        <TextInput style={styles.box_item_input_value} value={order.notes}/>
                         
                 </View>
             </View>
@@ -115,13 +176,20 @@ const Detail = () => {
                                     <Text style={[styles.box_item_payment_item_value,(info_index <= 1 || info_index == order.info.length - 1) && styles.color_primary]}>{info.value_text}</Text>
                                 </View>
                                 )
-                            })}
-                                
+                            })}  
                         </View>
                         
                 </View>
             </View>
             </>}
+            {checkRatingStatus(order.date_rating).result === true && order.status === "COMPLETED" && 
+            <Pressable style={styles.box} onPress={() => navigation.navigate("rating_order", {p_order: JSON.stringify(order)})}>
+                <View style={styles.rating_box}>
+                    <MaterialIcons name="star-rate" size={20} color={primary_color} /> 
+                    <Text style={styles.rating}>Đánh giá đơn hàng</Text> 
+                    <MaterialIcons name="star-rate" size={20} color={primary_color} />
+                </View>
+            </Pressable>}
         </ScrollView>
             
     )
@@ -289,6 +357,7 @@ const styles = StyleSheet.create({
         borderStyle: 'dashed'
     },
     box_item: {
+        width: "100%",
         padding: 10,
         flexDirection: "row",
         justifyContent: "space-between",
@@ -418,6 +487,39 @@ const styles = StyleSheet.create({
   order_code: {
     flexDirection: "row",
     justifyContent: 'center'
+  },
+  info_item_title: {
+    textAlign: 'center',
+    fontFamily: SF_Pro_DISPLAY_BOLD
+  },
+  info_item: {
+    width: "100%",
+    flex: 1,
+    flexDirection: "row",
+    gap: 5
+  },
+  info_item_text: {
+    fontFamily: SF_Pro_DISPLAY_BOLD,
+    fontSize: 12
+  },
+  info_item_value: {
+    fontFamily: SF_Pro,
+    fontSize: 12,
+    flex: 1,
+    paddingRight: 5
+    // borderWidth: 1
+  },
+  rating_box: {
+    flexDirection: "row",
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  rating: {
+    color: primary_color,
+    fontFamily: SF_Pro_DISPLAY_BOLD,
+    textAlign: 'center',
+    padding: 10,
+    fontSize: 15
   }
 })
 export default Detail;    

@@ -7,7 +7,7 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 import { useEffect, useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Modal from 'react-native-modal';
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 // import Fontisto from '@expo/vector-icons/Fontisto';
 interface IMODAL {
   modalVisible: boolean,
@@ -24,6 +24,7 @@ interface IdataAddCart {
   qty: number
 }
 const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
+  const {profile} = useSelector((state: any) => state.public)
   const [toppingChoose, setToppingChoose] = useState<toppingC[]>([]);
   const [dataAddCart, setDataAddCart] = useState<IdataAddCart>({
     product_id: undefined,
@@ -41,7 +42,9 @@ const StoreModal = ({ modalVisible, setModalVisible, product }: IMODAL) => {
     setToppingChoose([])
   }, [modalVisible])
   const addToCart = async () => {
-    const data: any = await addCart({...dataAddCart, toppings: toppingChoose});
+    let find_address = profile.address.findIndex((i: any) => i.default == 1)
+
+    const data: any = await addCart({...dataAddCart, toppings: toppingChoose, lat: profile.address[find_address].lat, long: profile.address[find_address].long});
     if(data){
         dispatch(updatePublic({total_cart: data.data.total_cart, refresh_cart: true}))
         toast("Thêm giỏ hàng thành công!")
