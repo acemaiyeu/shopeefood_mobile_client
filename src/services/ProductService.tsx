@@ -39,3 +39,13 @@ export const getAllProductHots = async () => {
         throw e; // Rethrow to handle in the component/calling function
     }
 };
+
+export const getProductDetail = async (id: string | number) => {
+    try {
+        const res = await axiosToken.get(`/product/${id}`);
+        return res; // Return the actual data
+    } catch (e) {
+        console.error('Error fetching products:', e);
+        throw e; // Rethrow to handle in the component/calling function
+    }
+};

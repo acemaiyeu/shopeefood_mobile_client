@@ -9,6 +9,7 @@ import { Provider, useSelector } from 'react-redux';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import DynamicHome from '@/components/ui/DynamicIsland';
+import LoaddingModal from '@/components/ui/LoaddingModal';
 import SoundNotify from '@/components/ui/SoundNotify';
 import { primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import WebSocketProvider from '@/store/socket/WebSocketProvider';
@@ -64,6 +65,7 @@ export default function TabLayout() {
         </Tabs>
 
         {/* Cần đặt Toast ở cuối cùng để nó hiển thị đè lên trên cùng */}
+        <LoaddingModal />
         <DynamicHome />
         <SoundNotify />
       </ThemeProvider>

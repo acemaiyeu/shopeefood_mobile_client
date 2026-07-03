@@ -1,12 +1,13 @@
 import { ThemedView } from '@/components/themed-view';
 import StoreModal from '@/components/ui/StoreModal';
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
+import { getProductDetail } from '@/services/ProductService';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Foundation from '@expo/vector-icons/Foundation';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import no_thumbnail from '../../../../assets/images/no-thumbnail.jpg';
 export default function ProductDetail() {
     let params: any = useLocalSearchParams();
@@ -14,6 +15,20 @@ export default function ProductDetail() {
     let product = JSON.parse(params.product)
     const thumbnail = product.thumbnail != "" ? {uri: product.thumbnail} : no_thumbnail;
     const [modalVisible, setModalVisible] = useState(false);
+    const [ratings, setRating] = useState<any>([]);
+    const [totalBuy, setTotalBuy] = useState<string>("0");
+
+
+    const getDetailData = async () => {
+        const data = await getProductDetail(product.id);
+        if(data){
+            setRating(data.data.ratings)
+            setTotalBuy(data.data.total_buy)
+        }
+    }
+    useEffect(() => {
+        getDetailData()
+    }, [product.id])
     return (
         <ThemedView style={styles.container}>
             <StoreModal modalVisible={modalVisible} setModalVisible={setModalVisible} product={product} />
@@ -25,7 +40,7 @@ export default function ProductDetail() {
                     <View style={styles.price}>
                             <View style={styles.price_info}>
                                 <Text style={styles.price_text}>{(formatMoney(product.price))}</Text>
-                                <Text style={styles.buy_text}>{product.qty_sale ?? 0} đã bán</Text>
+                                <Text style={styles.buy_text}>{totalBuy} đã bán</Text>
                             </View>
                             <Pressable style={styles.icon_plus} onPress={() => {
                                 setModalVisible(true)
@@ -35,56 +50,39 @@ export default function ProductDetail() {
                     </View>
             </View>
             <View style={styles.footer}>
-                <Text style={styles.footer_title}>Đánh giá: </Text>
-                    <View style={styles.list_rates}>
-                            <View style={styles.rate_item}>
+                <Text style={styles.footer_title}>Đánh giá: ({ratings.length})</Text>
+                    <ScrollView style={styles.list_rates}>
+                        {ratings && ratings.length > 0 ? <>
+                            {ratings.map((r: any) => {
+                            return (
+                                <View style={styles.rate_item} key={r.id}>
                                 <View style={styles.icon}>
                                     <Ionicons name="person-circle-outline" size={24} color="black" />
                                 </View>
                                     <View style={styles.rate_info}>
                                         <View style={styles.rate_info_detail}>
-                                            <Text style={styles.rate_item_name}>Đỗ Nam Võ</Text>
+                                            <Text style={styles.rate_item_name}>{r.username}</Text>
                                             <Text style={styles.rate_item_value}>(
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                                <Foundation name="star" size={15} color={primary_color} />
+                                                {r.rate >= 1 && <Foundation name="star" size={15} color={primary_color} />}
+                                                {r.rate >= 2 && <Foundation name="star" size={15} color={primary_color} />}
+                                                {r.rate >= 3 && <Foundation name="star" size={15} color={primary_color} />}
+                                                {r.rate >= 4 && <Foundation name="star" size={15} color={primary_color} />}
+                                                {r.rate >= 5 && <Foundation name="star" size={15} color={primary_color} />}
                                             )
                                             </Text>
                                         </View>
                                         <View style={styles.rate_item_note}>
                                             
                                             <Text style={styles.rate_item_note_text}>Nội dung: </Text>
-                                            <Text style={styles.rate_item_note_value}>Đồ ăn ngon</Text>
+                                            <Text style={styles.rate_item_note_value}>{r.message}</Text>
                                         </View>
                                     </View>
                             </View>
+                            )
+                        })}
+                        </> : <View></View>}
 
-                            <View style={styles.rate_item}>
-                                <View style={styles.icon}>
-                                    <Ionicons name="person-circle-outline" size={24} color="black" />
-                                </View>
-                                    <View style={styles.rate_info}>
-                                        <View style={styles.rate_info_detail}>
-                                            <Text style={styles.rate_item_name}>Đỗ Nam Võ</Text>
-                                            <Text style={styles.rate_item_value}>(
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                                <Foundation name="star" size={15} color={primary_color} />
-                                            )
-                                            </Text>
-                                        </View>
-                                        <View style={styles.rate_item_note}>
-                                            
-                                            <Text style={styles.rate_item_note_text}>Nội dung: </Text>
-                                            <Text style={styles.rate_item_note_value}>Đồ ăn ngon</Text>
-                                        </View>
-                                    </View>
-                            </View>
-                    </View>
+                    </ScrollView>
             </View>
         </ThemedView>
     );
@@ -105,7 +103,7 @@ const styles = StyleSheet.create({
         padding: 10,
         alignItems: 'flex-start'
     },
-    footer_title: {fontFamily: SF_Pro_DISPLAY_BOLD, fontSize: 20},
+    footer_title: {fontFamily: SF_Pro_DISPLAY_BOLD, fontSize: 16, color: primary_color},
     list_rates: {flexDirection: "column", width: "100%", gap: 5},
     rate_item: {flexDirection: "row"},
     icon: {

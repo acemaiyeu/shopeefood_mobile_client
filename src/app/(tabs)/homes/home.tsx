@@ -66,11 +66,17 @@ export default function HomeScreen() {
   // 1. Hàm lấy danh sách sản phẩm
   const getProduct = async () => {
     try {
+      dispatch(updatePublic({loadding: true}))
       const rs: any = await getAllProducts(params);
       if (rs?.data) {
+        if(rs.data.length < 10){
+          setIsProductMore(false)
+        }
         setProducts(rs.data);
         setParams({ ...params, ...rs.meta });
       }
+      dispatch(updatePublic({loadding: false}))
+
     } catch (error) {
       console.log("Lỗi lấy sản phẩm:", error);
     }
@@ -78,9 +84,10 @@ export default function HomeScreen() {
 
   const getProductMore = async () => {
     try {
-      
+      dispatch(updatePublic({loadding: true}))
       const rs: any = await getAllProducts({...params,page: currentPage + 1});
       if (rs?.data) {
+        console.log(rs?.data)
         // Tạo một bản sao của mảng trả về để tránh mutate trực tiếp data gốc
         const newItems = [...rs.data]; 
         setCurrentPage(currentPage+1)
@@ -97,8 +104,12 @@ export default function HomeScreen() {
         }
 
         // Gộp mảng sạch vào state hiển thị
-        setProducts(prevProducts => [...prevProducts, ...newItems]);
+        if(newItems.length > 0){
+          setProducts(prevProducts => [...prevProducts, ...newItems]);
+        }
+        
     }
+    dispatch(updatePublic({loadding: false}))
     } catch (error) {
       console.log("Lỗi lấy sản phẩm:", error);
     }
@@ -269,7 +280,7 @@ export default function HomeScreen() {
                 {productPromotions.map((product: any) => {
                   const thumbnail = product.thumbnail ? { uri: product.thumbnail } : no_thumbnail;
                   return (
-                    <Pressable style={styles.product_item} key={product.product_nid} onPress={() => navigation.navigate(`store`, {store_slug: product.slug, product_id: product.product_id})}>
+                    <Pressable style={styles.product_item} key={product.product_id} onPress={() => navigation.navigate(`store`, {store_slug: product.slug, product_id: product.product_id})}>
                 <Image 
                     source={thumbnail} 
                     style={{ width: 80, height: 60, borderRadius: 5 }} // Ensure you provide dimensions

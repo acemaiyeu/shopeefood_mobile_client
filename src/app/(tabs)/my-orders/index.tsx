@@ -1,11 +1,12 @@
 // Ví dụ: app/(tabs)/my-orders/index.tsx
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import { getMyOrders } from '@/services/OrderService';
+import { updatePublic } from '@/store/features/PublicSlice';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import no_thumbnail from '../../../../assets/images/no-thumbnail.jpg';
 
 
@@ -16,9 +17,12 @@ export default function OrderListScreen() { // Bắt buộc phải có 'default'
   });
   const {order} = useSelector((state: any) => state.public)
   const navigation: any = useNavigation();
+  const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const getOrders = async () => {
+    dispatch(updatePublic({loadding: true}))
     const data: any = await getMyOrders(params?.pagination?.current_page ?? 1, 9)
+    dispatch(updatePublic({loadding: false}))
     if(data) {
       setOrders(data.data);
       setParams({...data.meta})

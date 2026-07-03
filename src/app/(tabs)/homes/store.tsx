@@ -2,10 +2,12 @@ import { ThemedView } from '@/components/themed-view';
 import StoreModal from '@/components/ui/StoreModal';
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import { getStoreBySlug } from '@/services/StoreService';
+import { updatePublic } from '@/store/features/PublicSlice';
 import Entypo from '@expo/vector-icons/Entypo';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useDispatch } from 'react-redux';
 
 export default function Store() {
     const params: any = useLocalSearchParams();
@@ -13,23 +15,17 @@ export default function Store() {
     const [modalVisible, setModalVisible] = useState(false);
     const [productActive, setProductActive] = useState({ name: "", price: 0 });
     const navigation: any = useNavigation();
-    const handlePressProduct = (selectedProduct: any) => {
-        // Chuẩn bị data bọc gọn gàng
-        const productData = {
-            ...selectedProduct,
-            toppings: selectedProduct.toppings ? JSON.stringify(selectedProduct.toppings) : JSON.stringify([])
-        };
-
-        // Điều hướng sang màn hình chi tiết
-        navigation.navigate("product_detail", JSON.stringify(productData));
-        };
+    const dispatch = useDispatch();
     // Refs cho cuộn
     const scrollViewRef = useRef<ScrollView>(null);
     const groupRefs = useRef<{ [key: string]: number }>({});
 
     const getDataStore = async () => {
+        dispatch(updatePublic({loadding: true}))
         const data = await getStoreBySlug(params.store_slug);
+        dispatch(updatePublic({loadding: false}))
         if (data) setStore(data);
+        
     };
 
     useEffect(() => {
