@@ -13,22 +13,31 @@ const PublicSlice = createSlice({
     audio_notification: false,
     profile: {},
     total_notification: 0,
-    loadding: false
+    loadding: false,
+    version: "1.0.0",
+    version_content: "",
+    positionDynamic: 11 // ✅ Đã sửa chính xác thành chữ T
    },
   reducers: {
     updatePublic: (state, action) => {
-      state.cart = action.payload.cart??state.cart;
-      state.total_cart = action.payload.total_cart??state.total_cart;
-      state.login = (action.payload.login === 'is_login' || action.payload.login === 'none_login') ? action.payload.login : state.login;
-      state.refresh_cart = action.payload.refresh_cart === true ? (state.refresh_cart == 1 ? 2 : 1) :state.refresh_cart;
-      state.order = action.payload.order??state.order;
-      state.notification = action.payload.notification??state.notification;
-      state.audio_notification = (action.payload.audio_notification === true || action.payload.audio_notification === false) ? action.payload.audio_notification : state.audio_notification;
-      state.profile = action.payload.profile ?? state.profile;
-      state.total_notification = action.payload.total_notification ?? state.total_notification;
-      state.loadding = action.payload.loadding ?? state.loadding;
+      // Cách viết hiện đại & an toàn nhất của Redux Toolkit: 
+      // Duyệt qua tất cả các key truyền lên trong payload và ghi đè thẳng vào state
+      Object.keys(action.payload).forEach((key) => {
+        if (key === 'refresh_cart' && action.payload.refresh_cart === true) {
+          state.refresh_cart = state.refresh_cart == 1 ? 2 : 1;
+        } else if (key === 'total_notification_temp') {
+          // Bỏ qua không gán trực tiếp mà xử lý riêng ở dưới
+        } else {
+          state[key] = action.payload[key];
+        }
+      });
+
+      // Xử lý riêng logic cộng dồn thông báo của bạn
+      if (action.payload.total_notification_temp === true) {
+        state.total_notification += 1;
+      }
     },
-  },
+  }
 });
 
 export const { updatePublic } = PublicSlice.actions;

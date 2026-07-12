@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
 import logo from '../../../assets/images/logo1.png';
 // Import Linking để xử lý mở URL bên ngoài trên điện thoại
+import * as Crypto from 'expo-crypto';
+import * as Device from 'expo-device';
 import * as Linking from 'expo-linking';
 
 export default function HomeScreen() {
@@ -41,15 +43,43 @@ export default function HomeScreen() {
     }
   };
 
+  
+  const generateDeviceIdentifier = async() => {
+      // Gom thông tin máy
+      const info = [
+          Device.brand,
+          Device.modelName,
+          Device.osName,
+          Device.osVersion,
+          Device.totalMemory
+      ].join('|');
+      
+      // Băm chuỗi thông tin này thành SHA-256 (Hàm này trả về một Promise)
+      const hash = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          info
+      );
+      return hash;
+  }
   // Hàm xử lý Đăng nhập thông thường
   const handleLogin = async () => {
     // 🛑 ĐÃ XÓA DÒNG `const dispatch = useDispatch();` BỊ LỖI Ở ĐÂY
     setLoadding(true);
+    const deviceId = await generateDeviceIdentifier();
     try {
-      const res: any = await axios.post(`${apiURL}/api/login`, {
-        ...formData
-      });
+      // 1. Lấy mã máy trước (giả định hàm của bạn trả về chuỗi hash)
+        
 
+        // 2. Gửi request post kèm theo thông tin máy nằm trên Header
+        const res: any = await axios.post(
+          `${apiURL}/api/login`, 
+          { ...formData }, // Tham số thứ 2: Data gửi lên Body (email, password)
+          {
+            headers: {
+              'X-Device-ID': deviceId // Tham số thứ 3: Cấu hình Headers
+            }
+          }
+        );
       if (res.data) {
         setTokenWithExpiry('access_token', res.data.access_token, res.data.expires_in);
         await getProfile(res.data.access_token);
@@ -62,6 +92,7 @@ export default function HomeScreen() {
         console.log("Request URL:", `${apiURL}/api/auth` + e.config.url);
         const payload = e.config.data ? JSON.parse(e.config.data) : "Không có payload";
         console.log("Payload (Request Body):", payload);
+        console.log("Header X-Device-ID", deviceId);
         console.log("Status Code:", e.response.status, e.response.statusText);
         console.log("------------------------");
 

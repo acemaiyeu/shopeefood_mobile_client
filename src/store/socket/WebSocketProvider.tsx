@@ -145,7 +145,7 @@ export default function WebSocketProvider({ children }: { children: React.ReactN
            dispatch(updatePublic({order: eventData.data.order}))
         }
         if(eventData.data.notification){
-           dispatch(updatePublic({notification: eventData.data.notification, total_notification: total_noti + 1}))
+           dispatch(updatePublic({notification: eventData.data.notification, total_notification_temp: true}))
         }
        
         

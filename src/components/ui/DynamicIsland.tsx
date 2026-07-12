@@ -1,17 +1,24 @@
 import { primary_color } from "@/constants/const";
+import { updatePublic } from "@/store/features/PublicSlice";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useEffect, useState } from "react"; // Thêm useState
+import { getItem } from "expo-secure-store";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const DynamicHome = () => {
-    const { notification } = useSelector((state: any) => state.public);
-    // State dùng để ẩn/hiện nội dung bên trong một cách đồng bộ với animation
-    const [showContent, setShowContent] = useState(false);
+    const dispatch = useDispatch();
+
+    // ✅ BƯỚC 1: Đưa useSelector vào ĐÚNG VỊ TRÍ bên trong Component
+    const { notification, positionDynamic } = useSelector((state: any) => state.public);
     
+    // Tạo một biến fallback, nếu Redux chưa load xong thì mặc định là 11
+    const currentMargin = positionDynamic ?? 11;
+
+    const [showContent, setShowContent] = useState(false);
     const widthValue = useSharedValue(150);
 
     const animatedStyle = useAnimatedStyle(() => {
@@ -20,25 +27,34 @@ const DynamicHome = () => {
         };
     });
 
+    // Gọi lấy vị trí từ bộ nhớ máy khi mở app
+    useEffect(() => {
+        const loadDynamicPosition = async () => {
+            const data = await getItem("DYNAMIC_MARGIN_TOP"); 
+            if (data) {
+                dispatch(updatePublic({ positionDynamic: Number(data) }));
+            }
+        };
+        loadDynamicPosition();
+    }, []); 
+
+    // Xử lý hiệu ứng tai thỏ đóng/mở khi có notify
     useEffect(() => {
         let timer: NodeJS.Timeout;
         let hideContentTimer: NodeJS.Timeout;
 
         if (notification?.title) {
-            // 1. Hiện nội dung bên trong ngay lập tức khi có thông báo mới
             setShowContent(true);
             widthValue.value = 300; 
 
-            // 2. Đặt lịch sau 5 giây tự động ra lệnh co thanh đen về 150px
             timer = setTimeout(() => {
                 widthValue.value = 150;
 
-                // 3. Đợi thêm 500ms (bằng thời gian chạy animation) cho thanh đen co xong rồi mới ẩn chữ
                 hideContentTimer = setTimeout(() => {
                     setShowContent(false);
                 }, 500); 
                 
-            }, 5000); // Bạn đang để 5000ms (5 giây) trong đoạn code mẫu của bạn
+            }, 5000); 
         } else {
             widthValue.value = 150;
             setShowContent(false);
@@ -52,9 +68,12 @@ const DynamicHome = () => {
 
     return (
         <View style={styles.container} pointerEvents="box-none">
-            <AnimatedPressable style={[styles.box, animatedStyle]} onPress={() => alert("me")}>
+            {/* ✅ BƯỚC 2: Truyền marginTop động qua inline style ở đây để nó cập nhật theo thời gian thực */}
+            <AnimatedPressable 
+                style={[styles.box, animatedStyle, { marginTop: currentMargin }]} 
+                onPress={() => alert("me")}
+            >
                 <View style={styles.box_notify}>
-                    {/* Chỉ render nội dung khi showContent bằng true */}
                     {showContent && (
                         <>
                             <Ionicons name="notifications-circle-outline" size={18} color={primary_color} />
@@ -87,7 +106,7 @@ const styles = StyleSheet.create({
         height: 35,
         backgroundColor: "black",
         borderRadius: 100,
-        marginTop: 11,
+        // ❌ ĐÃ XÓA marginTop cố định ở đây vì nó không tự cập nhật được dữ liệu mới
         overflow: 'hidden', 
         justifyContent: 'center',
     },

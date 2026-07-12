@@ -7,7 +7,8 @@ export default function HomeLayout() {
       <Stack.Screen name="login" options={{ title: 'Đăng nhập', header: () => null }}/>
       <Stack.Screen name="register" options={{ title: 'Đăng ký', header: () => null }}/>
       <Stack.Screen name="forgot_password" options={{ title: 'Quên mật khẩu', header: () => null }}/>
-    
+      <Stack.Screen name="no_network" options={{ title: 'Không có mạng', header: () => null }}/>
+      
     </Stack>
   );
 }

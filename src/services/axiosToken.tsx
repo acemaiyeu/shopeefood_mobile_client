@@ -1,8 +1,29 @@
 import { apiURL, deleteItem, getItem } from '@/constants/const';
 import { toast } from '@/utils/toast';
 import axios from 'axios';
+import * as Crypto from 'expo-crypto';
+import * as Device from 'expo-device';
+import { router } from 'expo-router'; // CHÚ Ý: Import thẳng object router thay vì hook useRouter
 import { Alert } from 'react-native';
 
+// 1. Hàm sinh mã định danh thiết bị độc nhất
+const generateDeviceIdentifier = async () => {
+  const info = [
+    Device.brand,
+    Device.modelName,
+    Device.osName,
+    Device.osVersion,
+    Device.totalMemory
+  ].join('|');
+  
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    info
+  );
+  return hash;
+};
+
+// 2. Tạo Instance Axios
 const axiosToken = axios.create({
   baseURL: `${apiURL}/api/v2/`,
   headers: {
@@ -12,45 +33,37 @@ const axiosToken = axios.create({
   timeout: 10000,
 });
 
-// Hàm hỗ trợ xóa dữ liệu khi hết hạn
-const clearClientAuth = () => {
-  deleteItem('access_token');
-  deleteItem('expires_at');
-  // Nếu có dùng Redux/Slice để lưu profile client, bạn nên dispatch reset ở đây
+// Hàm hỗ trợ xóa dữ liệu auth khi hết hạn/lỗi thiết bị
+const clearClientAuth = async () => {
+  await deleteItem('access_token');
+  await deleteItem('expires_at');
 };
+
+// 3. Request Interceptor: Tự động đính kèm Token và Device ID
 axiosToken.interceptors.request.use(
   async (config) => {
-    // SỬA LỖI: Thêm await cho cả hai hàm đọc dữ liệu bất đồng bộ
     const token = await getItem('access_token');
     const expiresAt = await getItem('expires_at');
-    
-    console.log("Checkkk token:", token);
-
-    // 1. KIỂM TRA CHỦ ĐỘNG: Nếu biết chắc token đã hết hạn thì không gửi request nữa
+    const deviceId = await generateDeviceIdentifier();
+    console.log("check token", token, deviceId)
+    // Kiểm tra chủ động: Hết hạn Token dựa trên thời gian lưu ở Client
     if (expiresAt && Date.now() > Number(expiresAt)) {
       await clearClientAuth();
       
-      // Hủy request để tiết kiệm tài nguyên
       const controller = new AbortController();
       config.signal = controller.signal;
       controller.abort();
 
-      // SỬA LỖI: Thay toast của Web bằng Alert của Mobile
       Alert.alert("Thông báo", "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!");
-      
       return config;
     }
 
-    // 2. Đính kèm token vào header nếu tồn tại
+    // Luôn đính kèm mã máy vào Header (Kể cả khi chưa có token để Backend tiện xử lý nếu cần)
+    config.headers['X-Device-ID'] = deviceId;
+
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-
-    // 3. Kiểm tra bảo mật domain (Nếu mở lại thì dùng cấu trúc này)
-    // const baseURL = config.baseURL || '';
-    // if (!baseURL.includes('almobe.io.vn') && !baseURL.includes('192.168.') && !baseURL.includes('localhost')) {
-    //   return Promise.reject(new Error('Cảnh báo: Nguồn không xác thực!'));
-    // }
 
     return config;
   },
@@ -59,107 +72,65 @@ axiosToken.interceptors.request.use(
   }
 );
 
+// 4. Response Interceptor: Xử lý kết quả trả về và xử lý lỗi tập trung
 axiosToken.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response) => {
+    // Trả thẳng dữ liệu sạch (response.data) về cho nơi gọi API sử dụng ngắn gọn
+    return response.data;
+  },
+  async (error) => {
     if (error.response) {
-      // 1. Log chi tiết lỗi để debug
+      // --- LOG DEBUG CHI TIẾT LỖI API ---
       console.log("--- CHI TIẾT LỖI API ---");
-      console.log("Request URL:", `${apiURL}/api/v2` + error.config.url); // Tránh cộng chuỗi nếu apiURL đã có trong cấu hình base
-      const payload = error.config.data ? JSON.parse(error.config.data) : "Không có payload";
+      console.log("Request URL:", error.config.baseURL + error.config.url);
+      const payload = error.config.data ? error.config.data : "Không có payload";
       console.log("Payload (Request Body):", payload);
       console.log("Request Method:", error.config.method?.toUpperCase());
       console.log("Status Code:", error.response.status, error.response.statusText);
-      console.log("Request Headers:", error.config.headers);
-      console.log("Response Headers:", error.response.headers);
+      console.log("Response Data:", error.response.data);
       console.log("------------------------");
 
-      // 2. Xử lý logic theo status code
       const { status, data } = error.response;
       const message = data?.message || 'Đã xảy ra lỗi';
 
       switch (status) {
         case 401:
-          if (!window.location.pathname.includes('/login')) {
-            toast("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.", "error");
-            clearClientAuth();
-          }
+          // Token hết hạn hoặc sai lệch từ phía Server trả về
+          toast("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.", "error");
+          await clearClientAuth();
+          router.replace('/(auth)/login'); // Sử dụng expo-router để điều hướng chuẩn Native
           break;
+
         case 403:
-          toast("Bạn không có quyền truy cập!", "error");
+          // Lỗi không có quyền TRỰC TIẾP hoặc lỗi LỆCH MÃ MÁY (X-Device-ID không khớp)
+          // Đọc message Backend trả về nếu có thông báo cụ thể tài khoản đăng nhập máy khác
+          toast(message || "Bạn không có quyền truy cập!", "error");
+          await clearClientAuth();
+          router.replace('/(auth)/login');
           break;
+
         case 422:
           const validationErrors = data?.errors;
           toast(Array.isArray(validationErrors) ? validationErrors[0] : (validationErrors || "Dữ liệu không hợp lệ."), "error");
           break;
+
         case 429:
           toast("Quá nhiều yêu cầu, vui lòng thử lại sau!", "error");
           break;
+
         case 500:
           toast('Lỗi hệ thống máy chủ!', "error");
           break;
+
         default:
           toast(message, "error");
       }
     } else if (error.code === 'ERR_CANCELED') {
-      console.log('Request canceled by client');
+      console.log('Request canceled by client (Expired)');
     } else {
       toast("Lỗi kết nối hoặc không phản hồi từ máy chủ!", "error");
     }
 
-    return Promise.reject(error);
-  }
-);
-
-
-
-axiosToken.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    if (error.response) {
-      const { status, data } = error.response;
-      const message = data?.message || 'Đã xảy ra lỗi';
-
-      switch (status) {
-                    case 401:
-                      // Xử lý khi Token hết hạn hoặc không hợp lệ từ phía Server
-                      if (!window.location.pathname.includes('/login')) {
-                        toast("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.", "error");
-                        clearClientAuth();
-                        // Điều hướng người dùng nếu cần
-                        // setTimeout(() => window.location.href = '/login', 1500);
-                      }
-                      break;
-            
-                    case 403:
-                      toast("Bạn không có quyền truy cập!", "error");
-                      break;
-            
-                    case 422:
-                      const validationErrors = data?.errors;
-                      toast(Array.isArray(validationErrors) ? validationErrors[0] : (validationErrors || "Dữ liệu không hợp lệ."), "error");
-                      break;
-            
-                    case 429:
-                      toast("Quá nhiều yêu cầu, vui lòng thử lại sau!", "error");
-                      break;
-            
-                    case 500:
-                      toast('Lỗi hệ thống máy chủ!', "error");
-                      break;
-            
-                    default:
-                      toast(message, "error");
-                  }
-           
-      
-    } else if (error.code === 'ERR_CANCELED') {
-      // Request bị hủy do chủ động check ở interceptor.request, không cần bắn lỗi thêm
-      console.log('Request canceled by client (Expired)');
-    } else {
-      toast("Lỗi kết nối hoặc CSP chặn!", "error");
-    }
-    
     return Promise.reject(error);
   }
 );

@@ -1,6 +1,8 @@
 import { ThemedView } from '@/components/themed-view';
+import BlinkingPromoText from '@/components/ui/BlinkingPromoText';
 import StoreModal from '@/components/ui/StoreModal';
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
+import { getAllClientPromotions } from '@/services/PromotionService';
 import { getStoreBySlug } from '@/services/StoreService';
 import { updatePublic } from '@/store/features/PublicSlice';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -16,6 +18,7 @@ export default function Store() {
     const [productActive, setProductActive] = useState({ name: "", price: 0 });
     const navigation: any = useNavigation();
     const dispatch = useDispatch();
+    const [promotions, setPromotions] = useState<any>([]);
     // Refs cho cuộn
     const scrollViewRef = useRef<ScrollView>(null);
     const groupRefs = useRef<{ [key: string]: number }>({});
@@ -27,10 +30,24 @@ export default function Store() {
         if (data) setStore(data);
         
     };
-
+        const getPromotions = async () => {
+        if(store.slug){
+             const data = await getAllClientPromotions(store.slug)
+             if(data){
+                console.log()
+                setPromotions(data.data)
+             }
+        }
+       
+    }
     useEffect(() => {
-        if (!store.slug) getDataStore();
+        if (!store.slug) getDataStore(); 
+            
     }, []);
+    useEffect(() => {
+        getPromotions();
+    }, [store.slug]);
+    
 
     const scrollToGroup = (groupId: string) => {
         const y = groupRefs.current[groupId];
@@ -38,6 +55,7 @@ export default function Store() {
             scrollViewRef.current.scrollTo({ y: y, animated: true });
         }
     };
+
     const handleAddToCart = (product: any) => {
         setProductActive({ ...product });
         setModalVisible(true);
@@ -84,6 +102,7 @@ export default function Store() {
             </View>
 
             <View style={styles.body}>
+                {promotions && promotions.length > 0 && <BlinkingPromoText title={promotions[0].name} promotions={promotions}/>}
                 {/* Menu danh mục */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.menu}>
                   <Text style={styles.menu_modal}>DANH MỤC: </Text>

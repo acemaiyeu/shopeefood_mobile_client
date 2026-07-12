@@ -1,4 +1,5 @@
 import { ThemedView } from '@/components/themed-view';
+import ShowImageModal from '@/components/ui/ShowImageModal';
 import StoreModal from '@/components/ui/StoreModal';
 import { formatMoney, primary_color, SF_Pro, SF_Pro_DISPLAY_BOLD } from '@/constants/const';
 import { getProductDetail } from '@/services/ProductService';
@@ -15,6 +16,9 @@ export default function ProductDetail() {
     let product = JSON.parse(params.product)
     const thumbnail = product.thumbnail != "" ? {uri: product.thumbnail} : no_thumbnail;
     const [modalVisible, setModalVisible] = useState(false);
+    const [ modalImageVisible, setModalImageVisible] = useState(false);
+    const [urlImage, setUrlImage] = useState<string>("");
+    
     const [ratings, setRating] = useState<any>([]);
     const [totalBuy, setTotalBuy] = useState<string>("0");
 
@@ -29,8 +33,14 @@ export default function ProductDetail() {
     useEffect(() => {
         getDetailData()
     }, [product.id])
+    useEffect(() => {
+        if(urlImage !== ""){
+            setModalImageVisible(true)
+        }
+    }, [urlImage])
     return (
         <ThemedView style={styles.container}>
+            <ShowImageModal  modalVisible={modalImageVisible} setModalVisible={setModalImageVisible} img_url={urlImage} />
             <StoreModal modalVisible={modalVisible} setModalVisible={setModalVisible} product={product} />
             <View style={styles.header}>
                     <View style={styles.thumbnail_container}>
@@ -54,6 +64,7 @@ export default function ProductDetail() {
                     <ScrollView style={styles.list_rates}>
                         {ratings && ratings.length > 0 ? <>
                             {ratings.map((r: any) => {
+                               const images = JSON.parse(r.images) ?? [];
                             return (
                                 <View style={styles.rate_item} key={r.id}>
                                 <View style={styles.icon}>
@@ -76,6 +87,13 @@ export default function ProductDetail() {
                                             <Text style={styles.rate_item_note_text}>Nội dung: </Text>
                                             <Text style={styles.rate_item_note_value}>{r.message}</Text>
                                         </View>
+                                        {images && images.length > 0 && images.map((i: any, key: number) => {
+                                                return (
+                                                    <Pressable onPress={() => setUrlImage(i)} style={styles.list_image}>
+                                                        <Image source={{uri: i}} style={{width: 50, height: 25, borderRadius: 5}} key={key} />
+                                                    </Pressable>
+                                                )
+                                        })}
                                     </View>
                             </View>
                             )
@@ -116,5 +134,6 @@ const styles = StyleSheet.create({
     rate_item_note: {flexDirection: 'row', alignItems: 'center'},
     rate_item_note_text: {fontFamily: SF_Pro_DISPLAY_BOLD, fontSize: 12},
     rate_item_note_value: {fontFamily: SF_Pro, fontSize: 12},
-    icon_plus: {width: 100, height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 10}
+    icon_plus: {width: 100, height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 10},
+    list_image: {flexDirection: "row", gap: 5}
 });

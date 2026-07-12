@@ -1,4 +1,5 @@
 import { getItem } from '@/constants/const';
+import { useNetInfo } from '@react-native-community/netinfo';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, RefreshControl, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
@@ -12,9 +13,13 @@ export default function SplashScreen() {
   const { login } = useSelector((state: any) => state.public);
   const [refreshing, setRefreshing] = useState(false);
   const isMounted = useRef(true);
-
+  const netInfo = useNetInfo();
+  
   const checkAuthAndNavigate = useCallback(async () => {
     try {
+      if (netInfo.isConnected === false) {
+        return router.replace('/(auth)/no-network');;
+      }
       const [token] = await Promise.all([
         getItem('access_token'),
         delay(2000)
