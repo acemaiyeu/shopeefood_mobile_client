@@ -82,11 +82,12 @@ export default function ProductDetail() {
                                             )
                                             </Text>
                                         </View>
+                                        {r.message && 
                                         <View style={styles.rate_item_note}>
                                             
                                             <Text style={styles.rate_item_note_text}>Nội dung: </Text>
                                             <Text style={styles.rate_item_note_value}>{r.message}</Text>
-                                        </View>
+                                        </View>}
                                         {images && images.length > 0 && images.map((i: any, key: number) => {
                                                 return (
                                                     <Pressable onPress={() => setUrlImage(i)} style={styles.list_image}>
@@ -94,7 +95,12 @@ export default function ProductDetail() {
                                                     </Pressable>
                                                 )
                                         })}
+                                         {r.store_reply && <View style={styles.store_reply_item}>
+                                            <Text style={styles.store_reply_item_text}>Phản hồi của cửa hàng</Text>
+                                            <Text style={styles.store_reply_item_value}>{r.store_reply}</Text>
+                                        </View>}
                                     </View>
+                                   
                             </View>
                             )
                         })}
@@ -121,9 +127,9 @@ const styles = StyleSheet.create({
         padding: 10,
         alignItems: 'flex-start'
     },
-    footer_title: {fontFamily: SF_Pro_DISPLAY_BOLD, fontSize: 16, color: primary_color},
-    list_rates: {flexDirection: "column", width: "100%", gap: 5},
-    rate_item: {flexDirection: "row"},
+    footer_title: {width: "100%",fontFamily: SF_Pro_DISPLAY_BOLD, fontSize: 16, color: primary_color},
+    list_rates: {flexDirection: "column", width: "100%", gap: 10, paddingVertical: 5},
+    rate_item: {flexDirection: "row", width: "100%"},
     icon: {
         paddingHorizontal: 10
     },
@@ -135,5 +141,12 @@ const styles = StyleSheet.create({
     rate_item_note_text: {fontFamily: SF_Pro_DISPLAY_BOLD, fontSize: 12},
     rate_item_note_value: {fontFamily: SF_Pro, fontSize: 12},
     icon_plus: {width: 100, height: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 10},
-    list_image: {flexDirection: "row", gap: 5}
+    list_image: {flexDirection: "row", gap: 5},
+    store_reply_item: {flexDirection: "column", width: "85%", borderColor: '#333', borderWidth: 1, marginTop: 5, paddingHorizontal: 5, paddingBottom: 5},
+    store_reply_item_text: {
+        fontFamily: SF_Pro_DISPLAY_BOLD, color: 'green', fontSize: 13
+    },
+    store_reply_item_value: {
+        fontSize: 12, fontFamily: SF_Pro
+    }
 });
